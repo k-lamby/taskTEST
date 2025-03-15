@@ -29,9 +29,6 @@ workflows:
     artifacts:
       - app.ipa # Save the built .ipa file as an artifact
     publishing:
-      ios:
-        credentials: apple_credentials # Codemagic uses your connected Apple Developer account
-        app_store_connect:
-          app_identifier: com.lamby2812.taskTEST # Replace with your actual bundle identifier
-          upload_parameters:
-            platform: ios
+      app_store_connect:
+        apple_id: lordlamberino@gmail.com
+        password: yhvp-segf-vykk-uekn
