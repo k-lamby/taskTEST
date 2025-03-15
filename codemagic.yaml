@@ -1,0 +1,37 @@
+workflows:
+  testflight:
+    name: iOS TestFlight Workflow
+    environment:
+      groups:
+        - group
+      vars:
+        EXPO_TOKEN: $EXPO_TOKEN
+        APPLE_ID: $APPLE_ID
+        APP_STORE_CONNECT_PASSWORD: $APP_STORE_CONNECT_PASSWORD
+      node: 16.20.0 # Node.js version compatible with Expo
+      ruby: 3.0 # Ruby version for Fastlane
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install -g expo-cli eas-cli # Install Expo and EAS CLI globally
+          npm ci # Install project dependencies
+      - name: Configure EAS for iOS builds
+        script: |
+          npx eas build:configure --platform ios # Configure EAS for iOS platform
+      - name: Build iOS app
+        script: |
+          npx eas build --platform ios --profile production --non-interactive
+      - name: Download built app
+        script: |
+          echo "Downloading the iOS build artifact..."
+          build_url=$(cat build-url.txt)
+          curl -o app.ipa "$build_url"
+    artifacts:
+      - app.ipa # Save the built .ipa file as an artifact
+    publishing:
+      ios:
+        credentials: apple_credentials # Codemagic uses your connected Apple Developer account
+        app_store_connect:
+          app_identifier: com.lamby2812.taskTEST # Replace with your actual bundle identifier
+          upload_parameters:
+            platform: ios
