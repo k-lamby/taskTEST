@@ -8,8 +8,7 @@ workflows:
         EXPO_TOKEN: $EXPO_TOKEN
         APPLE_ID: $APPLE_ID
         APP_STORE_CONNECT_PASSWORD: $APP_STORE_CONNECT_PASSWORD
-      node: 16.20.0 # Node.js version compatible with Expo
-      ruby: 3.0 # Ruby version for Fastlane
+      node: 16.20.0
     scripts:
       - name: Install dependencies
         script: |
