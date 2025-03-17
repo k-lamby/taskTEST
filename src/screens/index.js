@@ -2,7 +2,7 @@
 // using this to simplify imports of the various pages
 //========================================================//
 
-export { default as HomeScreen } from './HomeScreen';
+export { default as LoginScreen } from './LoginScreen';
 export { default as SignupScreen } from './SignupScreen';
 export { default as SummaryScreen } from './SummaryScreen';
 export { default as ProjectsScreen } from './ProjectsScreen';
