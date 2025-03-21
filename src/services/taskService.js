@@ -265,3 +265,27 @@ export const addMessage = async (taskId, subtaskId = null, message) => {
     throw error;
   }
 };
+
+/* ======================
+   Add a message to a task or subtask
+   ====================== */
+export const toggleTaskCompletion = async (taskId, currentStatus) => {
+  try {
+    // ✅ Get reference to the Firestore task document
+    const taskRef = doc(db, "tasks", taskId);
+
+    // ✅ Determine the new status
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+
+    // ✅ Update the task document with the new status
+    await updateDoc(taskRef, {
+      status: newStatus,
+      completedAt: newStatus === "completed" ? new Date() : null, // Optional timestamp
+    });
+
+    console.log(`Task ${taskId} updated to ${newStatus}`);
+  } catch (error) {
+    console.error("Error updating task status:", error);
+    throw error; // Ensure error is handled in UI
+  }
+};

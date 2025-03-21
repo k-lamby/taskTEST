@@ -6,6 +6,7 @@
       "ios",
       "android"
     ],
+    "newArchEnabled": true,
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon-1024.png",
@@ -28,7 +29,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon-1024.png",
         "backgroundColor": "#ffffff"
       }
     },

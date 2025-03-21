@@ -140,6 +140,44 @@ const GlobalStyles = StyleSheet.create({
   // ===== GRADIENT CONTAINER ===== //
   gradientContainer: {
     flex: 1,
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+  },
+  overlayImage: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    zIndex: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    zIndex: 2,
+  },
+
+  // ===== MODAL STYLES ===== //
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-start", // Ensures modal starts from the top
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+    paddingTop: "45%",
+  },
+  modalContainer: {
+    width: "80%",
+    padding: 20,
+    backgroundColor: "#001524", // Dark blue background
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "100%",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#ffffff",
+    marginTop: 10,
+    fontSize: 16,
   },
 
   // ===== DARK BLUE CONTAINER (REUSABLE) ===== //
@@ -164,7 +202,8 @@ const GlobalStyles = StyleSheet.create({
   listItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingBottom: 8,
+
   },
   seeMore: {
     marginTop: 10,
@@ -174,6 +213,33 @@ const GlobalStyles = StyleSheet.create({
     color: "#FFA500",
     fontWeight: "bold",
   },
+    // ===== TOP AND BOTTOM NAVBAR CONTAINER ===== //
+  bottomBarContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "#001524",
+    paddingVertical: 10,
+  },
+  bottomBarIconContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 30,
+    padding: 10,
+  },
+  bottomBarActiveIconContainer: {
+    backgroundColor: "rgba(255, 125, 0, 0.2)",
+  },
+  bottomBarSafeArea: {
+    backgroundColor: "#001524",
+    width: "100%",
+  },
+  tightIconContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
 });
+
+
+
 
 export default GlobalStyles;

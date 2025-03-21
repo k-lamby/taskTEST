@@ -1,102 +1,91 @@
 //================== BottomBar.js ===========================//
-// This is the toolbar at the bottom of the page.
-// It is displayed throughout the application whenever the user is logged in.
-// It includes navigation buttons and a button to create a new project.
+// This component provides a fixed bottom toolbar for navigation.
+// It includes buttons for navigating between key screens 
+// and adding new projects.
 //===========================================================//
 
 import React, { useState } from "react";
-import { View, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faHouse, faClipboardCheck, faCirclePlus, faCircleCheck, faUser } from "@fortawesome/free-solid-svg-icons";
+import { View, TouchableOpacity, SafeAreaView } from "react-native";
+import { Home, ClipboardCheck, PlusCircle, CheckCircle, User } from "lucide-react-native";
 
-import CreateProjectModal from "./CreateProjectModal"; // Moved here
+import CreateProjectModal from "./CreateProjectModal";
+import GlobalStyles from "../styles/styles"; 
 
 const BottomBar = ({ navigation, activeScreen, userId }) => {
-  // This state controls the visibility of the "Create Project" modal
-  const [isFormVisible, setFormVisible] = useState(false);
+  // state used for the create projectform visibility
+  const [isProjectFormVisible, setProjectFormVisible] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Create Project Modal (now inside BottomBar) */}
-      <CreateProjectModal visible={isFormVisible} onClose={() => setFormVisible(false)} userId={userId} />
+    <SafeAreaView style={GlobalStyles.bottomBarSafeArea}>
+      {/* Create Project Modal */}
+      <CreateProjectModal 
+        visible={isProjectFormVisible} 
+        onClose={() => setProjectFormVisible(false)} 
+        userId={userId} />
 
-      {/* Bottom bar container */}
-      <View style={styles.container}>
-        {/* Summary (Home) Icon */}
+      {/* bottom bar container, holds all the icons */}
+      <View style={GlobalStyles.bottomBarContainer}>
+
+        <NavButton 
+          icon={Home} 
+          label="Home" 
+          screen="Summary" 
+          navigation={navigation} 
+          activeScreen={activeScreen} 
+        />
+
+        <NavButton 
+          icon={ClipboardCheck} 
+          label="Projects" 
+          screen="Projects" 
+          navigation={navigation} 
+          activeScreen={activeScreen} 
+        />
+
+        {/* Add Project Button (Standalone) */}
         <TouchableOpacity
-          onPress={() => navigation.navigate("Summary")}
-          style={[styles.iconContainer, activeScreen === "Summary" && styles.activeIconContainer]}
+          onPress={() => setFormVisible(true)}
+          style={GlobalStyles.plusButton}
+          accessibilityLabel="Create a new project"
+          accessible={true}
         >
-          <FontAwesomeIcon icon={faHouse} size={24} style={[styles.icon, activeScreen === "Summary" && styles.activeIcon]} />
+          <PlusCircle color="white" size={28} />
         </TouchableOpacity>
 
-        {/* Projects Icon */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Projects")}
-          style={[styles.iconContainer, activeScreen === "Projects" && styles.activeIconContainer]}
-        >
-          <FontAwesomeIcon icon={faClipboardCheck} size={24} style={[styles.icon, activeScreen === "Projects" && styles.activeIcon]} />
-        </TouchableOpacity>
+        <NavButton 
+          icon={CheckCircle} 
+          label="Tasks" 
+          screen="Tasks" 
+          navigation={navigation} 
+          activeScreen={activeScreen} 
+        />
 
-        {/* Add Project Icon */}
-        <TouchableOpacity onPress={() => setFormVisible(true)} style={styles.iconContainer}>
-          <FontAwesomeIcon icon={faCirclePlus} size={24} style={styles.icon} />
-        </TouchableOpacity>
-
-        {/* Tasks Icon */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Tasks")}
-          style={[styles.iconContainer, activeScreen === "Tasks" && styles.activeIconContainer]}
-        >
-          <FontAwesomeIcon icon={faCircleCheck} size={24} style={[styles.icon, activeScreen === "Tasks" && styles.activeIcon]} />
-        </TouchableOpacity>
-
-        {/* Settings Icon */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Settings")}
-          style={[styles.iconContainer, activeScreen === "Settings" && styles.activeIconContainer]}
-        >
-          <FontAwesomeIcon icon={faUser} size={24} style={[styles.icon, activeScreen === "Settings" && styles.activeIcon]} />
-        </TouchableOpacity>
+        <NavButton 
+          icon={User} 
+          label="Settings" 
+          screen="Settings" 
+          navigation={navigation} 
+          activeScreen={activeScreen} />
       </View>
     </SafeAreaView>
   );
 };
 
-//======== Page-Specific Styles ===============//
-const styles = StyleSheet.create({
-  // Ensures the bottom bar is rendered within the viewable area of the device
-  safeArea: {
-    backgroundColor: "#001524",
-    width: "100%",
-  },
-  // Container for bottom bar buttons
-  container: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#001524",
-    paddingVertical: 10,
-  },
-  // Default icon container style
-  iconContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 30,
-    padding: 10,
-  },
-  // Default icon style
-  icon: {
-    fontSize: 24,
-    color: "white",
-  },
-  // If the active screen corresponds to the container, highlight the icon
-  activeIconContainer: {
-    backgroundColor: "rgba(255, 125, 0, 0.2)",
-  },
-  activeIcon: {
-    fontSize: 24,
-    color: "rgba(255, 125, 0, 1)",
-  },
-});
+// reusable navbutton for consistent styling
+const NavButton = ({ icon: Icon, label, screen, navigation, activeScreen }) => {
+  // if the screen is active we want the icon to be a different colour
+  const isActive = activeScreen === screen;
+
+  return (
+    <TouchableOpacity
+      onPress={() => navigation.navigate(screen)}
+      style={[GlobalStyles.bottomBarIconContainer, isActive && GlobalStyles.bottomBarActiveIconContainer]}
+      accessibilityLabel={`Navigate to ${label}`}
+      accessible={true}
+    >
+      <Icon color={isActive ? "rgba(255, 125, 0, 1)" : "white"} size={24} />
+    </TouchableOpacity>
+  );
+};
 
 export default BottomBar;

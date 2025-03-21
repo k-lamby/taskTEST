@@ -1,7 +1,7 @@
 //================== SummaryScreen.js ===========================//
-// This is the landing page for the user on login, it will display
-// featured projects, featured tasks and any recent activity
-//========================================================//
+// This is the landing page for the user on login. It displays
+// featured projects, featured tasks, and any recent activity.
+//================================================================//
 
 import React, { useEffect, useState } from "react";
 import {
@@ -10,17 +10,14 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  StyleSheet,
-  Modal,
 } from "react-native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faBolt } from "@fortawesome/free-solid-svg-icons";
+import { FolderKanban } from "lucide-react-native"; 
 
 import TopBar from "../components/TopBar";
 import BottomBar from "../components/BottomBar";
 import GradientBackground from "../components/GradientBackground";
 import useProjectService from "../services/projectService";
-import { fetchTasksForAssignedProjects } from "../services/taskService"; 
+import { fetchTasksForAssignedProjects } from "../services/taskService";
 import { fetchRecentActivities } from "../services/activityService";
 import { useUser } from "../contexts/UserContext";
 import GlobalStyles from "../styles/styles";
@@ -31,23 +28,23 @@ const SummaryScreen = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
 
-  // state variables for displaying loading icon, or errors
+  // State variables for loading and error handling
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Fetch user details from context
-  const { userId, userEmail, firstName } = useUser();
+  const { userId, firstName } = useUser();
 
   // Fetch project service functions
   const { fetchProjects } = useProjectService();
 
-  // Fetch data when the component mounts or userId changes
   useEffect(() => {
+    // Fetch data when the component mounts or userId changes
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        // fetch the user's projects (limit to 3 for display)
+        // Fetch the user's projects (limit to 3 for display)
         const projectData = await fetchProjects();
         setProjects(projectData.slice(0, 3));
 
@@ -55,7 +52,7 @@ const SummaryScreen = ({ navigation }) => {
         const assignedTasks = await fetchTasksForAssignedProjects(userId);
         setTasks(assignedTasks.slice(0, 3));
 
-        // fetch recent activities related to the user's assigned projects
+        // Fetch recent activities related to the user's assigned projects
         const recentActivities = await fetchRecentActivities(userId);
         setActivities(recentActivities.slice(0, 3));
       } catch (err) {
@@ -67,19 +64,67 @@ const SummaryScreen = ({ navigation }) => {
     };
 
     fetchData();
-  }, [userId, userEmail, fetchProjects]);
+  }, [userId, fetchProjects]);
 
-  // helper function for rendering each section as these are displayed the same
-  const renderSection = (title, data, noDataText, navigateTo, type) => (
+  return (
+    <GradientBackground>
+      {/* Top navigation bar with user greeting */}
+      <TopBar title={`Welcome, ${firstName || "User"}!`} />
+
+      <View style={GlobalStyles.container}>
+        {/* Featured Projects Section */}
+        <SectionList
+          title="Featured Projects"
+          data={projects}
+          noDataText="No projects found."
+          navigateTo="Projects"
+          navigation={navigation}
+          type="project"
+        />
+
+        {/* Featured Tasks Section */}
+        <SectionList
+          title="Featured Tasks"
+          data={tasks}
+          noDataText="No tasks found."
+          navigateTo="Tasks"
+          navigation={navigation}
+          type="task"
+        />
+
+        {/* Recent Activities Section */}
+        <SectionList
+          title="Recent Activities"
+          data={activities}
+          noDataText="No activities found."
+          navigateTo="Activities"
+          navigation={navigation}
+          type="activity"
+        />
+      </View>
+
+      {/* Bottom navigation bar */}
+      <BottomBar navigation={navigation} activeScreen="Summary" userId={userId} />
+    </GradientBackground>
+  );
+};
+
+// =================== Reusable SectionList Component =================== //
+// This component renders a section containing a title, a list of items, 
+// and a "See More" button for navigation.
+
+const SectionList = ({ title, data, noDataText, navigateTo, navigation, type }) => {
+  return (
     <View style={GlobalStyles.sectionContainer}>
       {/* Section Header */}
       <View style={GlobalStyles.sectionHeader}>
         <Text style={GlobalStyles.sectionTitle}>{title}</Text>
       </View>
+
       {/* Loading Indicator while fetching data */}
-      {loading ? (
-        <ActivityIndicator size="medium" color="#ffffff" />
-      ) : data.length > 0 ? (
+      {data.length === 0 ? (
+        <Text style={GlobalStyles.translucentText}>{noDataText}</Text>
+      ) : (
         <FlatList
           data={data}
           renderItem={({ item }) => (
@@ -92,71 +137,36 @@ const SummaryScreen = ({ navigation }) => {
                     projectName: item.name,
                   });
                 } else if (type === "task") {
-                  setSelectedTask(item);
+
                 } else if (type === "activity") {
-                  setSelectedActivity(item);
+
                 }
               }}
+              accessibilityLabel={`Open ${title} item: ${item.name || item.title || item.description}`}
+              accessible={true}
             >
-              <FontAwesomeIcon style={GlobalStyles.bulletPoint} icon={faBolt} />
               <Text style={GlobalStyles.normalText}>
+                <FolderKanban color="#FFA500" size={18} />
+              </Text>
+              <Text style={[GlobalStyles.normalText, { paddingLeft: 10 }]}>
                 {item.name || item.title || item.description}
               </Text>
             </TouchableOpacity>
           )}
           keyExtractor={(item, index) => index.toString()}
         />
-      ) : (
-        <Text style={GlobalStyles.translucentText}>{noDataText}</Text>
       )}
 
       {/* See More Button */}
       <TouchableOpacity
         style={GlobalStyles.seeMore}
         onPress={() => navigation.navigate(navigateTo)}
+        accessibilityLabel={`See more ${title}`}
+        accessible={true}
       >
         <Text style={GlobalStyles.seeMoreText}>See More →</Text>
       </TouchableOpacity>
     </View>
-  );
-
-  return (
-    <GradientBackground>
-      {/* Top navigation bar */}
-      <TopBar title={`Welcome, ${firstName || "User"}!`} />
-
-      <View style={GlobalStyles.container}>
-        {/* Featured Projects Section */}
-        {renderSection(
-          "Featured Projects",
-          projects,
-          "No projects found.",
-          "Projects",
-          "project"
-        )}
-
-        {/* Featured Tasks Section */}
-        {renderSection(
-          "Featured Tasks",
-          tasks,
-          "No tasks found.",
-          "Tasks",
-          "task"
-        )}
-
-        {/* Recent Activities Section */}
-        {renderSection(
-          "Recent Activities",
-          activities,
-          "No activities found.",
-          "Activities",
-          "activity"
-        )}
-      </View>
-
-      {/* Bottom navigation bar */}
-      <BottomBar navigation={navigation} activeScreen="Summary" userId={userId} />
-    </GradientBackground>
   );
 };
 

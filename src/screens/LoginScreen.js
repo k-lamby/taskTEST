@@ -1,25 +1,27 @@
+//================ LoginScreen.js ========================//
+// This is the entrance point into the application, using
+// react navigation with stack the screens to be displayed
+//========================================================//
+
 import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
-import GlobalStyles from "../styles/styles";
+
 import LoginModal from "../components/LoginModal";
 import GradientBackground from "../components/GradientBackground";
 
-/**
- * HomeScreen Component
- *
- * Entry point of the app. Users can log in or sign up from here.
- *
- * @param {object} navigation React Navigation prop
- */
+import GlobalStyles from "../styles/styles";
+
+// takes navigation prop for navigating into the app
 const LoginScreen = ({ navigation }) => {
   // State to control visibility of login modal
-  const [modalVisible, setModalVisible] = useState(false);
+  const [loginVisible, setLoginVisible] = useState(false);
 
   return (
+    // use the gradient background component displays
+    // gradient and a light blue hive
     <GradientBackground>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <View style={GlobalStyles.fullPageContainer}>
-        {/* Branding */}
         <Image
           source={require("../../assets/images/logo.png")}
           style={GlobalStyles.logo}
@@ -29,7 +31,6 @@ const LoginScreen = ({ navigation }) => {
         <Text style={GlobalStyles.logoText}>HIVE</Text>
         <Text style={GlobalStyles.subheaderText}>Transform Chaos Into Clarity</Text>
 
-        {/* Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[GlobalStyles.primaryButton, styles.equalWidthButton]}
@@ -51,16 +52,17 @@ const LoginScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Login Modal */}
+      {/* login modal component for entering details */}
       <LoginModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        visible={loginVisible}
+        onClose={() => setLoginVisible(false)}
         navigation={navigation}
       />
     </GradientBackground>
   );
 };
 
+//======Page Sepcific Styles =====//
 const styles = StyleSheet.create({
   buttonContainer: {
     width: "100%",

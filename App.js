@@ -17,12 +17,12 @@ import { UserProvider } from './src/contexts/UserContext';
 // import all the screens for the application
 import {
   LoginScreen,
-  // SignupScreen,
-  // SummaryScreen,
-  // ProjectsScreen,
-  // TasksScreen,
-  // SettingsScreen,
-  // ProjectDetailScreen,
+  SignupScreen,
+  SummaryScreen,
+  ProjectsScreen,
+  TasksScreen,
+  SettingsScreen,
+  ProjectDetailScreen,
 } from './src/screens';
 
 // create our navigation stack
@@ -67,7 +67,7 @@ export default function App() {
               headerShown: false,
             }}
           />
-          {/* <Stack.Screen
+          <Stack.Screen
             name="Signup"
             component={SignupScreen}
             options={{ title: "Sign Up" }}
@@ -75,28 +75,38 @@ export default function App() {
           <Stack.Screen
             name="Summary"
             component={SummaryScreen}
-            options={{ title: "Dashboard Summary" }}
+            options={{
+              headerShown: false,
+            }}
           />
           <Stack.Screen
             name="Projects"
             component={ProjectsScreen}
-            options={{ title: "Projects Overview" }}
+            options={{
+              headerShown: false,
+            }}
           />
           <Stack.Screen
             name="Tasks"
             component={TasksScreen}
-            options={{ title: "Task Management" }}
+            options={{
+              headerShown: false,
+            }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{ title: "App Settings" }}
+            options={{
+              headerShown: false,
+            }}
           />
           <Stack.Screen
             name="ProjectDetail"
             component={ProjectDetailScreen}
-            options={{ title: "Project Details" }}
-          /> */}
+            options={{
+              headerShown: false,
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </UserProvider>

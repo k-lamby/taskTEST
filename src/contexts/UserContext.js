@@ -1,53 +1,60 @@
-//================== UserContext.js ===========================//
-// We want to be able to access certain user level information
-// throughout the app. This allows us to ensure we tag new projects
-// and events to the correct person.
-//=============================================================//
+//==================== UserContext.js ==========================//
+// provides global user authentication states for the current
+// logged in user.
+//================================================================//
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { auth } from "../config/firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-// Create the new context for the user
-const UserContext = createContext();
+// create the user context
+const UserContext = createContext(null);
 
-// Create a provider, this will wrap around the components that
-// I want to pass the user details to
+// user provider wraps around our components providing it with the states
+// and functions
 export const UserProvider = ({ children }) => {
+  // we want to capture these when the user logs authenticates
   const [userId, setUserId] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  const [firstName, setFirstName] = useState(null); // Store user's first name
+  const [firstName, setFirstName] = useState(null);
 
-  // This effect listens for authentication state changes
   useEffect(() => {
+    // use firebase auth
+    const auth = getAuth();
+
+    // update user details whenever auth state changes
+    // https://stackoverflow.com/questions/42762443/how-can-i-unsubscribe-to-onauthstatechanged
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUserId(firebaseUser.uid); // Store the Firebase user ID
-        setUserEmail(firebaseUser.email); // Store the user's email
+        //if the user exists then update the context
+        setUserId(firebaseUser.uid);
+        setUserEmail(firebaseUser.email);
 
-        // Extract first name from Firebase's displayName
         const fullName = firebaseUser.displayName || "User";
-        const extractedFirstName = fullName.split(" ")[0]; // Gets only the first name
+        const extractedFirstName = fullName.split(" ")[0];
         setFirstName(extractedFirstName);
       } else {
+        // otherwise set everything back to null
         setUserId(null);
         setUserEmail(null);
         setFirstName(null);
       }
     });
-
-    // Cleanup the listener when the component unmounts
     return () => unsubscribe();
   }, []);
 
-  // This will be what is passed to the components
-  // setUserId allows us to update it when the user is logging in
+  // return the context so this can be used by other screens
   return (
-    <UserContext.Provider value={{ userId, setUserId, userEmail, setUserEmail, firstName, setFirstName }}>
+    <UserContext.Provider value={{ 
+      userId, setUserId, 
+      userEmail, setUserEmail, 
+      firstName, setFirstName,
+    }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-// Custom hook for simplicity in accessing the UserContext
+// custom hook for clean usage
 export const useUser = () => useContext(UserContext);
+
+export default UserContext;
