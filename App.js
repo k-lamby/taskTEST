@@ -70,7 +70,9 @@ export default function App() {
           <Stack.Screen
             name="Signup"
             component={SignupScreen}
-            options={{ title: "Sign Up" }}
+            options={{
+              headerShown: false,
+            }}
           />
           <Stack.Screen
             name="Summary"

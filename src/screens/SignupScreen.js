@@ -1,50 +1,86 @@
+//================ SignupScreen.js ========================//
+// This is the entrance point into the application, using
+// react navigation with stack the screens to be displayed
+//========================================================//
+
 import React, { useState } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
-  ImageBackground, Image, TouchableWithoutFeedback, 
-  Keyboard, Alert, ScrollView, KeyboardAvoidingView, Platform 
+  Alert, ScrollView, KeyboardAvoidingView, 
+  Platform, Keyboard, TouchableWithoutFeedback, StyleSheet
 } from 'react-native';
+
 import GlobalStyles from '../styles/styles';
 import GradientBackground from "../components/GradientBackground"; 
+
 import { signUp } from '../services/authService';
+import { useUser } from "../contexts/UserContext";
 
 const SignupScreen = ({ navigation }) => {
-  // State variables for user input
+  // state variables for storing user sign up information
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Handles user sign-up process
+  // context hook for passing current user settings through
+  const { setUserId, setUserEmail, setFirstName: setUserFirstName } = useUser();
+
+  // state variable to track validation errors
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  // this handles the actual sign up
   const handleSignUp = async () => {
-    // Validate input fields
-    if (!firstName || !lastName || !email || !password || password !== confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields correctly.");
+    // clear any previous error messages before handling new login
+    setErrorMessage(null);
+
+    // validate that the information is all present
+    // if not, display an error to the user
+    if (!firstName.trim()) {
+      setErrorMessage("First name is required.");
+      return;
+    }
+    if (!lastName.trim()) {
+      setErrorMessage("Last name is required.");
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setErrorMessage("Valid email is required.");
+      return;
+    }
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
     try {
-      // Call Firebase sign-up function
+      // use the sign up function in auth service
       const user = await signUp(email, password, firstName, lastName);
-      console.log("User signed up:", user);
 
-      // Navigate to another screen after successful sign-up
-      navigation.navigate('Home'); // Change 'Home' to the appropriate screen name
+      // then on successful sign up, update the user context
+      setUserId(user.uid);   
+      setUserEmail(user.email);
+      setUserFirstName(firstName);
+
+      // then direct the user straight to the summary page
+      navigation.navigate('Summary');
+
     } catch (error) {
-      Alert.alert("Sign Up Error", error.message);
+      // display basic error handling for error on sign up
+      // we should expand on this more for a future iteration
+      setErrorMessage(error.message || "An unexpected error occurred.");
     }
   };
 
   return (
     <GradientBackground>
-      {/* Background Image */}
-      <ImageBackground 
-        source={require('../../assets/images/beeHive.png')} // Update the path as necessary
-        style={GlobalStyles.gradientContainer}
-        resizeMode="cover"
-      >
-        {/* Keyboard Avoiding Wrapper */}
+        {/* use keyboard avoiding view to prevent overlap between keyboard and form */}
+        {/* https://reactnative.dev/docs/keyboardavoidingview */}
         <KeyboardAvoidingView 
           behavior={Platform.OS === "ios" ? "padding" : "height"} 
           style={styles.flexContainer}
@@ -53,114 +89,132 @@ const SignupScreen = ({ navigation }) => {
             contentContainerStyle={styles.scrollContainer}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Dismiss keyboard when tapping outside input fields */}
+            {/* clicking elsewhere on the page dismisses the keyboard */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
               <View style={styles.container}>
-                {/* Logo Section */}
                 <View style={styles.logoContainer}>
-                  <Image 
-                    source={require('../../assets/images/logo.png')} 
-                    style={[GlobalStyles.logo, { width: 70, height: 60 }]} // Smaller logo
-                  />
-                  <View style={styles.textContainer}>
-                    <Text style={[GlobalStyles.logoText, { fontSize: 24 }]}>task</Text>
-                    <Text style={[GlobalStyles.logoText, { fontSize: 24 }]}>HIVE</Text>
-                  </View>
+                  <Text style={[GlobalStyles.logoText, styles.logoText]}>task</Text>
+                  <Text style={[GlobalStyles.logoText, styles.logoText]}>HIVE</Text>
                 </View>
 
-                {/* Sign-Up Form */}
+                {/* input for signing up to the application */}
                 <View style={styles.formContainer}>
+
+                  {/* conditional display of error messages */}
+                  {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
+                  {/* Input Fields with Spacing */}
                   <TextInput 
-                    style={GlobalStyles.textInput} 
+                    style={styles.input} 
                     placeholder="First Name" 
                     placeholderTextColor="#ffffff" 
                     value={firstName}
                     onChangeText={setFirstName}
+                    accessibilityLabel="Enter your first name"
                   />
                   <TextInput 
-                    style={GlobalStyles.textInput} 
+                    style={styles.input} 
                     placeholder="Last Name" 
                     placeholderTextColor="#ffffff" 
                     value={lastName}
                     onChangeText={setLastName}
+                    accessibilityLabel="Enter your last name"
                   />
                   <TextInput 
-                    style={GlobalStyles.textInput} 
+                    style={styles.input} 
                     placeholder="Email" 
                     placeholderTextColor="#ffffff" 
                     value={email}
                     onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    accessibilityLabel="Enter your email"
                   />
                   <TextInput 
-                    style={GlobalStyles.textInput} 
+                    style={styles.input} 
                     placeholder="Password" 
                     placeholderTextColor="#ffffff" 
                     secureTextEntry 
+                    textContentType="password"
                     value={password}
                     onChangeText={setPassword}
+                    autoCapitalize="none"
+                    accessibilityLabel="Enter your password"
                   />
                   <TextInput 
-                    style={GlobalStyles.textInput} 
+                    style={styles.input} 
                     placeholder="Confirm Password" 
                     placeholderTextColor="#ffffff" 
                     secureTextEntry 
+                    textContentType="password"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
+                    autoCapitalize="none"
+                    accessibilityLabel="Re-enter your password"
                   />
 
-                  {/* Sign-Up Button */}
+                  {/* when pressed triggers the handle sign up function */}
                   <TouchableOpacity 
                     style={GlobalStyles.primaryButton} 
                     onPress={handleSignUp}
+                    accessibilityLabel="Sign up for a new account"
                   >
                     <Text style={GlobalStyles.primaryButtonText}>Sign Up</Text>
                   </TouchableOpacity>
 
-                  {/* Back to Login Button */}
                   <TouchableOpacity 
-                    style={GlobalStyles.secondaryButton} 
                     onPress={() => navigation.goBack()}
+                    accessibilityLabel="Go back to login screen"
                   >
-                    <Text style={GlobalStyles.secondaryButtonText}>Back to Login</Text>
+                    <Text style={GlobalStyles.closeButtonText}>Back to Login</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </TouchableWithoutFeedback>
           </ScrollView>
         </KeyboardAvoidingView>
-      </ImageBackground>
     </GradientBackground>
   );
 };
 
-// Styles specific to this screen
-const styles = {
+// ==== Page Specific Styles===//
+const styles = StyleSheet.create({
   flexContainer: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center', // Keeps everything centered
-    alignItems: 'center',  // Centers content horizontally
+    justifyContent: 'center',
+    alignItems: 'center', 
     paddingHorizontal: 20,
   },
   container: {
     width: '100%',
-    alignItems: 'center',  // Ensures centering
+    alignItems: 'center',
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Centers logo horizontally
-    marginBottom: 20, // Adds spacing between logo and form
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  textContainer: {
-    marginLeft: 10, // Adds spacing between logo and text
+  logoText: {
+    fontSize: 24,
+    marginHorizontal: 5,
   },
   formContainer: {
     width: '80%',
-    alignItems: 'center', // Centers the form horizontally
+    alignItems: 'center',
   },
-};
+  input: {
+    ...GlobalStyles.textInput,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: "#FF0000",
+    marginBottom: 10,
+    fontSize: 14,
+  },
+});
 
 export default SignupScreen;

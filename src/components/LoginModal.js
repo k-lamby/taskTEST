@@ -91,8 +91,8 @@ const LoginModal = ({ visible, onClose, navigation }) => {
                 placeholderTextColor="rgba(255, 255, 255, 0.7)"
                 value={email}
                 onChangeText={setEmail}
-                autoCapitalize="none" // prevents autocapitalisation
-                keyboardType="email-address" // uses specific keyboard layout
+                autoCapitalize="none"
+                keyboardType="email-address"
                 accessibilityLabel="Email input"
                 accessibilityHint="Enter your email"
               />
@@ -140,7 +140,7 @@ const LoginModal = ({ visible, onClose, navigation }) => {
 
 const styles = {
   inputSpacing: {
-    height: 15, // Spacing between email and password input fields
+    height: 15, 
   },
 };
 

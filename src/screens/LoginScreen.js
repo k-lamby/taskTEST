@@ -34,7 +34,7 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[GlobalStyles.primaryButton, styles.equalWidthButton]}
-            onPress={() => setModalVisible(true)}
+            onPress={() => setLoginVisible(true)}
             accessibilityRole="button"
             accessibilityLabel="Log In"
           >
