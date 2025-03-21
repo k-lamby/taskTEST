@@ -9,31 +9,29 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
 } from "react-native";
 import { FolderKanban } from "lucide-react-native"; 
 
 import TopBar from "../components/TopBar";
 import BottomBar from "../components/BottomBar";
 import GradientBackground from "../components/GradientBackground";
+
 import useProjectService from "../services/projectService";
 import { fetchTasksForAssignedProjects } from "../services/taskService";
 import { fetchRecentActivities } from "../services/activityService";
 import { useUser } from "../contexts/UserContext";
+
 import GlobalStyles from "../styles/styles";
 
 const SummaryScreen = ({ navigation }) => {
-  // State variables for storing projects, tasks, and activities
+  // state variables for storing information pulled from
+  // the database
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
 
-  // State variables for loading and error handling
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Fetch user details from context
-  const { userId, firstName } = useUser();
+  // get the user details from the user context
+  const { userId, firstName, email } = useUser();
 
   // Fetch project service functions
   const { fetchProjects } = useProjectService();
@@ -42,7 +40,6 @@ const SummaryScreen = ({ navigation }) => {
     // Fetch data when the component mounts or userId changes
     const fetchData = async () => {
       try {
-        setLoading(true);
 
         // Fetch the user's projects (limit to 3 for display)
         const projectData = await fetchProjects();
@@ -53,13 +50,11 @@ const SummaryScreen = ({ navigation }) => {
         setTasks(assignedTasks.slice(0, 3));
 
         // Fetch recent activities related to the user's assigned projects
-        const recentActivities = await fetchRecentActivities(userId);
+        const maxActivities = 5
+        const recentActivities = await fetchRecentActivities(projectData, maxActivities);
         setActivities(recentActivities.slice(0, 3));
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load data.");
-      } finally {
-        setLoading(false);
+        Alert.alert("Error fetching data:", err);
       }
     };
 

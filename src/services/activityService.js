@@ -16,36 +16,61 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
-/**
- * Fetch recent activities where the user is either:
- * 1️⃣ The owner of the activity (`userId` matches)
- * 2️⃣ Involved in a task (`taskId` belongs to a task they are assigned to)
- * 
- * @param {string} userId - The user's unique ID.
- * @param {number} [maxActivities=5] - Max number of activities to return.
- * @returns {Promise<Array>} - A list of activity objects.
- */
-export const fetchRecentActivities = async (userId, maxActivities = 5) => {
+// ===========================================================//
+// This gets all recent activities for the projectData that is passed to it
+// accepts null, otherwise returns to the top n most recent activities
+//============================================================//
+export const fetchRecentActivities = async (projectData, maxActivities = null) => {
   try {
+    // get to make sure the user id is passed
     if (!userId) throw new Error("User ID is required to fetch activities.");
 
-    // Query activities where the user is either the creator or assigned to the task
-    const activitiesQuery = query(
-      collection(db, "activities"),
-      where("userId", "==", userId), // Fetch activities created by the user
-      orderBy("timestamp", "desc"),
-      limit(maxActivities)
-    );
+    // use fetch projects from the project service to get an array of project ids
+    print(userId)
+    const projectIds = projectData.map((project) => project.id);
 
-    const snapshot = await getDocs(activitiesQuery);
+    if (projectIds.length === 0) {
+      return [];
+    }
 
-    const activities = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    return activities;
+    // we then collect the datafrom firestore.
+    // firestore has a limit of 10 items
+    // we should consider how best to handle this for scalability
+    let allActivities = [];
+    const batchSize = 10;
+    for (let i = 0; i < projectIds.length; i += batchSize) {
+      const projectBatch = projectIds.slice(i, i + batchSize);
+
+      // then get activities for that query
+      // limit it to the top 10
+      const activitiesQuery = query(
+        collection(db, "activities"),
+        where("projectId", "in", projectBatch),
+        orderBy("timestamp", "desc"),
+        limit(maxActivities)
+      );
+      // apply a limit to the response if  max limit is provided
+      if (maxActivities) {
+        activitiesQuery = query(activitiesQuery, limit(maxActivities));
+      }
+
+      // build the object for return
+      const snapshot = await getDocs(activitiesQuery);
+      const batchActivities = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      allActivities.push(...batchActivities);
+    }
+
+    // then sort by timestamp
+    allActivities.sort((a, b) => b.timestamp - a.timestamp);
+
+    // return the activities up to the max activities requested
+    return maxActivities ? allActivities.slice(0, maxActivities) : allActivities;
+
   } catch (error) {
-    console.error("Error fetching activities:", error);
     throw error;
   }
 };

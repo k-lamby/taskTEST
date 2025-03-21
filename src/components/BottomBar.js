@@ -17,7 +17,7 @@ const BottomBar = ({ navigation, activeScreen, userId }) => {
 
   return (
     <SafeAreaView style={GlobalStyles.bottomBarSafeArea}>
-      {/* Create Project Modal */}
+      {/* Create Project Modal, slides up from the bottom */}
       <CreateProjectModal 
         visible={isProjectFormVisible} 
         onClose={() => setProjectFormVisible(false)} 
@@ -44,7 +44,7 @@ const BottomBar = ({ navigation, activeScreen, userId }) => {
 
         {/* Add Project Button (Standalone) */}
         <TouchableOpacity
-          onPress={() => setFormVisible(true)}
+          onPress={() => setProjectFormVisible(true)}
           style={GlobalStyles.plusButton}
           accessibilityLabel="Create a new project"
           accessible={true}
