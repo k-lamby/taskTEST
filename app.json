@@ -6,11 +6,12 @@
       "ios",
       "android"
     ],
-    "version": "1.0.0",
+    "newArchEnabled": true,
+    "version": "3.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo.png",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -23,11 +24,13 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lamby2812.taskTEST"
+      "bundleIdentifier": "com.lamby2812.taskTEST",
+      "icon": "./assets/icon-1024.png",
+      "buildNumber": "4"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       }
     },
@@ -36,6 +39,9 @@
         "projectId": "2704383e-b397-4a02-8df7-9810dcbf6369"
       }
     },
-    "runtimeVersion": "1.0.0"
+    "runtimeVersion": "1.0.0",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
