@@ -15,7 +15,7 @@ import Icon from "react-native-vector-icons/Feather";
 
 import AddUserModal from "./AddUserModal";
 import CustomDatePicker from "./CustomDatePicker";
-import useProjectService from "../services/projectService"; // ✅ Corrected Import
+import { useProjectService } from "../services/projectService";
 import { useUser } from "../contexts/UserContext"; // ✅ Ensure correct context import
 
 import GlobalStyles from "../styles/styles";

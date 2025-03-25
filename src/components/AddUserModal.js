@@ -1,3 +1,6 @@
+//=============AddUserModal.js=================//
+// pop up modal for adding a user via their email
+// address
 import React, { useState } from 'react';
 import {
   View,
@@ -10,24 +13,29 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+
 import GlobalStyles from '../styles/styles';
 
 const AddUserModal = ({ visible, onClose, onUserAdded }) => {
+  // state for storing the user email that has been added
   const [userEmail, setUserEmail] = useState('');
 
+  // minimal validating for now
+  // but just check an email has been added
   const handleAddUser = () => {
     if (!userEmail.trim()) {
       Alert.alert('Invalid Input', 'Please enter a valid email address.');
       return;
     }
 
-    console.log('Adding user:', userEmail);
-
+    // callback function passing the user email
     onUserAdded(userEmail.trim());
+    //reset the user email to blank
     setUserEmail('');
     onClose();
   };
 
+  // display the modal, simple text input with an add user or close button
   return (
     <Modal transparent={true} visible={visible} animationType="slide">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -45,7 +53,6 @@ const AddUserModal = ({ visible, onClose, onUserAdded }) => {
               textContentType="emailAddress"
             />
 
-            {/* Button Container (Stacked Vertically) */}
             <View style={styles.buttonContainer}>
               <Pressable style={GlobalStyles.primaryButton} onPress={handleAddUser}>
                 <Text style={GlobalStyles.primaryButtonText}>Add User</Text>
@@ -80,11 +87,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonContainer: {
-    flexDirection: 'column', // ✅ Stacks buttons vertically
+    flexDirection: 'column', 
     alignItems: 'center',
     width: '100%',
     marginTop: 10,
-    gap: 10, // Adds spacing between the buttons
+    gap: 10, 
   },
   closeButton: {
     marginTop: 10,

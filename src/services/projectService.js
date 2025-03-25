@@ -1,128 +1,197 @@
-//==============================//
-// projectService.js            //
-//==============================//
-// This module handles the logic for creating and accessing projects
-// in Firestore. It includes functions for adding a new project,
-// as well as fetching projects created by or shared with a user.
-//==============================//
+//================ProjectService.js==============//
+// handles various database operations related
+// to projects for the application
+//==============================================//
 
 import { useCallback } from "react";
 import { db } from "../config/firebaseConfig";
 import {
   collection,
-  where,
   query,
+  where,
   getDocs,
   doc,
   getDoc,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+  arrayUnion,
+  serverTimestamp,
 } from "firebase/firestore";
 import { useUser } from "../contexts/UserContext";
 
-/**
- * Fetch all projects associated with a given user.
- * This includes projects created by the user and projects shared with them.
- *
- * @param {string} userId - The user's ID.
- * @param {string} userEmail - The user's email (for shared projects).
- * @returns {Promise<Array>} - Returns an array of unique projects.
- */
-const fetchProjects = async (userId, userEmail) => {
+//CREATE NEW PROJECT
+//Creates a new project passing it the project data
+//entered by the user form
+export const createProject = async (projectData) => {
   try {
+    const projectsCollectionRef = collection(db, "projects");
+    const newProject = {
+      ...projectData,
+      createdAt: serverTimestamp(),
+      isActive: true,
+    };
+    const docRef = await addDoc(projectsCollectionRef, newProject);
+    return docRef.id;
+  } catch (error) {
+    throw error;
+  }
+};
 
-    if (!userId || !userEmail) {
-      console.warn("⚠️ Missing userId or userEmail in fetchProjects");
-      return [];
-    }
+//FETCH PROJECTS
+//Fetches all projects that the user has created or 
+//had shared with
+export const fetchProjects = async (userId, userEmail=null) => {
+  try {
+    // if there is no userid then return nothing
+    if (!userId) return [];
 
-    // Query for projects created by the user
+    // get all the active projects created by the user
     const createdByQuery = query(
       collection(db, "projects"),
-      where("createdBy", "==", userId)
+      where("createdBy", "==", userId),
+      where("isActive", "==", true)
     );
-
-    // Query for projects shared with the user (by ID or email)
+    // get all the active projects shared with the user
     const sharedWithQuery = query(
       collection(db, "projects"),
-      where("sharedWith", "array-contains-any", [userId, userEmail.trim()])
+      where("sharedWith", "array-contains-any", [userId, userEmail.trim().toLowerCase()]),
+      where("isActive", "==", true)
     );
-
-    // Execute both queries in parallel for efficiency
-    const [createdBySnapshot, sharedWithSnapshot] = await Promise.all([
+    // then query the database for the above two criteria
+    const [createdSnapshot, sharedSnapshot] = await Promise.all([
       getDocs(createdByQuery),
       getDocs(sharedWithQuery),
     ]);
 
-    // Map documents to project objects
-    const createdByProjects = createdBySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    //initiate the object to store the project info in
+    const projectsMap = {};
 
-    const sharedWithProjects = sharedWithSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // then map each query result into the projects map
+    createdSnapshot.docs.forEach((doc) => {
+      projectsMap[doc.id] = { id: doc.id, ...doc.data() };
+    });
 
-    // Combine and remove duplicates using a hashmap
-    const allProjects = [...createdByProjects, ...sharedWithProjects].reduce((acc, project) => {
-      acc[project.id] = project;
-      return acc;
-    }, {});
+    sharedSnapshot.docs.forEach((doc) => {
+      projectsMap[doc.id] = { id: doc.id, ...doc.data() };
+    });
 
-    return Object.values(allProjects);
+    // then return the project details
+    return Object.values(projectsMap);
   } catch (error) {
-    console.error("❌ Error fetching projects: ", error);
     throw error;
   }
 };
 
-/**
- * Retrieves the list of user IDs that a given project is shared with.
- *
- * @param {string} projectId - The ID of the project.
- * @returns {Promise<string[]>} - Returns an array of user IDs.
- */
-const fetchProjectUserIds = async (projectId) => {
+// FETCH PROJECT USER IDS
+// Gets all the users associated with a project id
+export const fetchProjectUserIds = async (projectId) => {
   try {
-    if (!projectId) {
-      throw new Error("No project ID provided.");
-    }
+    // if there is no project id provided then throw an error
+    if (!projectId) throw new Error("Project ID is required.");
 
+    // build the query and execute
     const projectRef = doc(db, "projects", projectId);
     const projectDoc = await getDoc(projectRef);
 
-    if (projectDoc.exists()) {
-      const projectData = projectDoc.data();
-      const sharedWith = Array.isArray(projectData.sharedWith) ? projectData.sharedWith : [];
-      const projectCreator = projectData.createdBy || null;
-      return projectCreator ? [projectCreator, ...sharedWith] : sharedWith;
-    } else {
-      return [];
-    }
+    // check to make sure the document exists, if not
+    // just return an empty array
+    if (!projectDoc.exists()) return [];
+
+    //destruct the data to the variables
+    const { createdBy, sharedWith = [] } = projectDoc.data();
+    // then return the complete array with created by first
+    return createdBy ? [createdBy, ...sharedWith] : sharedWith;
   } catch (error) {
-    console.error("❌ Error fetching project user IDs:", error);
     throw error;
   }
 };
 
-/**
- * React Hook for managing projects.
- * This hook provides functions for fetching projects.
- */
-const useProjectService = () => {
+// UPDATE PROJECT
+// this updates the project title and description
+export const updateProject = async (projectId, data) => {
+  try {
+    // check to make sure the project id is present
+    if (!projectId) throw new Error("Project ID is required for update.");
+    // get the project we are updating
+    const projectRef = doc(db, "projects", projectId);
+    // then update the project with the data
+    await updateDoc(projectRef, data);
+  } catch (error) {
+    throw error;
+  }
+};
+
+// DELETE PROJECT
+// This does a soft delete, so the data can be recovered
+// after a set period of time we use firebase functions to permanently
+// delete the data
+export const deleteProject = async (projectId) => {
+  try {
+    if (!projectId) throw new Error("Project ID is required for deletion.");
+
+    const projectRef = doc(db, "projects", projectId);
+    // Mark the project as inactive instead of deleting it
+    // firebase will loop over these every 24 hours and get it
+    await updateDoc(projectRef, {
+      isActive: false,
+      deletedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// ADD USER TO THE PROJECT
+// adds additional user into the shared with section
+export const addUserToProject = async (projectId, userEmail) => {
+  try {
+    // the user is added using their email address
+    const emailLower = userEmail.trim().toLowerCase();
+
+    // we then check if the email is already associated with an account
+    const usersRef = collection(db, "users");
+    const userQuery = query(usersRef, where("email", "==", emailLower));
+    const userSnapshot = await getDocs(userQuery);
+
+    //get the project information
+    const projectRef = doc(db, "projects", projectId);
+
+    // if there is no user associated with the email
+    // then we store just the email. When a new account
+    // is created we scrub over these and update with the user id
+    if (userSnapshot.empty) {
+      await updateDoc(projectRef, {
+        sharedWith: arrayUnion(emailLower),
+      });
+    } else {
+      // otherwise we update the shared with section to include the new user id
+      const existingUserId = userSnapshot.docs[0].id;
+      await updateDoc(projectRef, {
+        sharedWith: arrayUnion(existingUserId),
+      });
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
+// CUSTOM HOOK PROJECT SERVICE
+// Allows us to export all the project functions for ease
+export const useProjectService = () => {
   const { userId, userEmail } = useUser();
 
-  // ✅ Memoize fetchProjects to prevent excessive re-renders
-  const memoizedFetchProjects = useCallback(() => fetchProjects(userId, userEmail), [userId, userEmail]);
+  const memoizedFetchProjects = useCallback(
+    () => fetchProjects(userId, userEmail),
+    [userId, userEmail]
+  );
 
   return {
     fetchProjects: memoizedFetchProjects,
+    createProject,
+    updateProject,
+    deleteProject,
+    addUserToProject,
+    fetchProjectUserIds,
   };
 };
-
-//==============================//
-// Exports (All at the Bottom)  //
-//==============================//
-// ✅ Ensure functions are only exported once
-export { fetchProjectUserIds, fetchProjects };
-export default useProjectService;

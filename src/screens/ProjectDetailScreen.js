@@ -185,7 +185,7 @@ const TaskItem = ({ item, projectUsers, onToggleTaskCompletion, onTaskDetail }) 
   return (
     <TouchableOpacity
       style={styles.taskContainer}
-      onPress={() => onTaskDetail(item)} // ✅ Open TaskDetailModal on text click
+      onPress={() => onTaskDetail(item)}
       accessibilityLabel={`View details of task: ${item.name}`}
     >
       {/* ✅ Task Completion Toggle */}
@@ -204,8 +204,7 @@ const TaskItem = ({ item, projectUsers, onToggleTaskCompletion, onTaskDetail }) 
           <Circle color="#BBBBBB" size={20} />
         )}
       </TouchableOpacity>
-
-      {/* ✅ Task Name & Assigned User (Stacked) */}
+      
       <View style={styles.taskTextContainer}>
         <Text style={GlobalStyles.normalText}>{item.name}</Text>
         <Text style={[GlobalStyles.translucentText,{fontSize: 12, paddingBottom: 8}]}>
@@ -217,7 +216,7 @@ const TaskItem = ({ item, projectUsers, onToggleTaskCompletion, onTaskDetail }) 
 };
 
 //=======================================================//
-// ActivityList Component ✅
+// ActivityList Component 
 // Displays recent activities related to the project
 //=======================================================//
 const ActivityList = ({ activities, loading }) => {
@@ -246,18 +245,15 @@ const ActivityList = ({ activities, loading }) => {
   );
 };
 
-//=======================================================//
-// Styles for TaskItem Component
-// Ensures proper alignment and spacing
-//=======================================================//
+//================Page Specific Styles=====================//
 const styles = {
   taskContainer: {
     flexDirection: "row",
     alignItems: "top",
-    gap: 10, // ✅ Space between checkbox and text
+    gap: 10,
   },
   taskTextContainer: {
-    flexDirection: "column", // ✅ Stack task name & assigned user
+    flexDirection: "column",
   },
   assignedText: {
     fontSize: 12,

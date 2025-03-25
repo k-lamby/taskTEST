@@ -127,3 +127,44 @@ export const toggleTaskCompletion = async (taskId, currentStatus) => {
     throw error;
   }
 };
+
+//===========================================================//
+//creates a task with subtasks
+// subtask logic not yet implemented
+//===========================================================//
+export const createTaskWithSubtasks = async (
+  projectId,
+  taskName,
+  dueDate,
+  ownerId,
+  subtasks = [],
+  attachments = [],
+  messages = []
+) => {
+  try {
+    // reference the task collectiom
+    const tasksCollectionRef = collection(db, "tasks");
+
+    // then build the upload from the data passed
+    const taskData = {
+      projectId: projectId,
+      name: taskName,
+      dueDate: dueDate,
+      owner: ownerId,
+      status: "pending",
+      createdAt: serverTimestamp(),
+      completedAt: null,
+      subtasks: subtasks,
+      attachments: attachments,
+      messages: messages,
+    };
+
+    // then add the new document
+    const docRef = await addDoc(tasksCollectionRef, taskData);
+
+    // return the new doc id for the task created
+    return docRef.id;
+  } catch (error) {
+    throw error;
+  }
+};

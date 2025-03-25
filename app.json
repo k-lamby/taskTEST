@@ -7,7 +7,7 @@
       "android"
     ],
     "newArchEnabled": true,
-    "version": "1.0.1",
+    "version": "3.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "splash": {
@@ -25,7 +25,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lamby2812.taskTEST",
-      "icon": "./assets/icon-1024.png"
+      "icon": "./assets/icon-1024.png",
+      "buildNumber": "4"
     },
     "android": {
       "adaptiveIcon": {

@@ -16,7 +16,7 @@ import TopBar from "../components/TopBar";
 import BottomBar from "../components/BottomBar";
 import GradientBackground from "../components/GradientBackground";
 
-import useProjectService from "../services/projectService";
+import { useProjectService } from "../services/projectService";
 import { fetchTasksForAssignedProjects } from "../services/taskService";
 import { fetchRecentActivities } from "../services/activityService";
 import { useUser } from "../contexts/UserContext";
