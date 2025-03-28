@@ -1,10 +1,8 @@
 //================== activityService.js ==========================//
-// This service handles adding and fetching user activities from Firestore.
-// Activities include logs such as project updates, task completions,
-// file uploads, or other user-initiated actions.
+// Handles user activity logs (file uploads, messages, task changes)
 //===============================================================//
 
-import { db } from "../config/firebaseConfig"; // Ensure Firebase is correctly configured
+import { db } from "../config/firebaseConfig";
 import {
   collection,
   where,
@@ -16,95 +14,70 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
-// ===========================================================//
-// This gets all recent activities for the projectData that is passed to it
-// accepts null, otherwise returns to the top n most recent activities
-//============================================================//
-export const fetchRecentActivities = async (projectData, maxActivities = null) => {
+
+export const fetchRecentActivities = async (projectIds, maxActivities = null) => {
   try {
-    // get to make sure the user id is passed
-    if (!userId) throw new Error("User ID is required to fetch activities.");
+    // if there are no projects then there are no activities, so return an empty array
+    if (projectIds.length === 0) return [];
 
-    // use fetch projects from the project service to get an array of project ids
-    print(userId)
-    const projectIds = projectData.map((project) => project.id);
+    // firestore has batch size limites, so we will do these in chunks of 10
+    const allActivities = [];
+    const batchSize = 10; 
 
-    if (projectIds.length === 0) {
-      return [];
-    }
-
-    // we then collect the datafrom firestore.
-    // firestore has a limit of 10 items
-    // we should consider how best to handle this for scalability
-    let allActivities = [];
-    const batchSize = 10;
+    // loop over each batch
     for (let i = 0; i < projectIds.length; i += batchSize) {
       const projectBatch = projectIds.slice(i, i + batchSize);
-
-      // then get activities for that query
-      // limit it to the top 10
+      // query the database to get those activities for the project
       const activitiesQuery = query(
         collection(db, "activities"),
         where("projectId", "in", projectBatch),
         orderBy("timestamp", "desc"),
-        limit(maxActivities)
+        ...(maxActivities ? [limit(maxActivities)] : [])
       );
-      // apply a limit to the response if  max limit is provided
-      if (maxActivities) {
-        activitiesQuery = query(activitiesQuery, limit(maxActivities));
-      }
 
-      // build the object for return
       const snapshot = await getDocs(activitiesQuery);
+      // then map them to the right structure
       const batchActivities = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
+      // and push them onto the activities array
       allActivities.push(...batchActivities);
     }
 
-    // then sort by timestamp
-    allActivities.sort((a, b) => b.timestamp - a.timestamp);
-
-    // return the activities up to the max activities requested
-    return maxActivities ? allActivities.slice(0, maxActivities) : allActivities;
-
+    // Sort combined results, convert dates to millis for accurate sorting
+    return allActivities.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
   } catch (error) {
     throw error;
   }
 };
 
-/**
- * Add a new activity log to Firestore.
- * 
- * @param {string} projectId - The project ID.
- * @param {string} taskId - The task ID.
- * @param {string} userId - The user performing the activity.
- * @param {Object} activityData - Details of the activity (e.g., message).
- * @returns {Promise<string>} - The document ID of the added activity.
- */
-export const addActivity = async (projectId, taskId, userId, activityData) => {
+export const addActivity = async ({
+  projectId,
+  taskId,
+  userId,
+  type,
+  content,
+  fileUrl = null,
+}) => {
   try {
+    // check to make sure the required data is present
     if (!projectId || !taskId || !userId) {
       throw new Error("Project ID, Task ID, and User ID are required.");
     }
-
-
-    // Store activities in a top-level "activities" collection
-    const activityRef = collection(db, "activities");
-
-    // Add the activity with relevant metadata
-    const docRef = await addDoc(activityRef, {
+    // then push the new activity to the database
+    const docRef = await addDoc(collection(db, "activities"), {
       projectId,
       taskId,
       userId,
-      ...activityData,
+      type,
+      content,
+      fileUrl,
       timestamp: Timestamp.now(),
     });
+    // and return the activity id
     return docRef.id;
   } catch (error) {
-    console.error("❌ Error adding activity:", error);
     throw error;
   }
 };

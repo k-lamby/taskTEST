@@ -3,19 +3,20 @@ import { View, Text, FlatList, StyleSheet } from 'react-native';
 import TopBar from '../components/TopBar';
 import BottomBar from '../components/BottomBar';
 import GradientBackground from "../components/GradientBackground"; 
-import { fetchTasksWithSubtasksByOwner } from '../services/taskService'; // Import task fetching function
+import { fetchTasksForUser } from '../services/taskService'; // Import task fetching function
+import { useUser } from "../contexts/UserContext";
 
 const TasksScreen = ({ navigation, route }) => {
-  const [tasks, setTasks] = useState([]);
-  const userId = route?.params?.userId || "defaultUserId"; // Ensure a user ID is available
+  const [usersTasks, setUsersTasks] = useState([]);
+  const { userId, firstName } = useUser();
 
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const fetchedTasks = await fetchTasksWithSubtasksByOwner(userId);
-        setTasks(fetchedTasks);
+        const fetchedTasks = await fetchTasksForUser(userId);
+        setUsersTasks(fetchedTasks);
       } catch (error) {
-        console.error("❌ Error fetching tasks:", error);
+        Alert.alert("Error Fetching tasks: " + error)
       }
     };
     loadTasks();
@@ -24,10 +25,10 @@ const TasksScreen = ({ navigation, route }) => {
   return (
     <GradientBackground>
       <View style={styles.container}>
-        <TopBar title="My Tasks" />
+        <TopBar title="Tasks Summary" />
         
         <FlatList
-          data={tasks}
+          data={usersTasks}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.taskCard}>

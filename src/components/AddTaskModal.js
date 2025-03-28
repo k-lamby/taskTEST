@@ -1,74 +1,82 @@
-//================== Add Task Modal.js ===========================//
-// This is a pop up window for adding a task to the database
-// it slides up from the bottom, very similar to the add projects
-// modal. Allows the user to add the task/description and assign to a user
-//====================================================================//
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
   Pressable,
+  Alert,
+  StyleSheet,
 } from "react-native";
+
 import CustomDatePicker from "./CustomDatePicker";
 import UserPickerModal from "./UserPickerModal";
 import GlobalStyles from "../styles/styles";
 import { useUser } from "../contexts/UserContext";
+import { addTask } from "../services/taskService";
 
-const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers, createTaskWithSubtasks }) => {
-  // use the user context to grab the current user details
-  const { userId, firstName } = useUser(); 
+const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }) => {
+  const { userId, firstName } = useUser();
 
-  // store the form inputs
   const [taskName, setTaskName] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [dueDate, setDueDate] = useState(new Date());
-
-  // use this to grab the assigned user from the user modal
+  const [priority, setPriority] = useState("medium");
   const [assignedUser, setAssignedUser] = useState({ id: userId, name: firstName });
 
-  // states to control the visibility of the date picker and user picker
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showUserPicker, setShowUserPicker] = useState(false);
 
-  // here we handle adding the task
   const handleAddTask = async () => {
     if (!taskName.trim()) {
       Alert.alert("Task name is required!");
       return;
     }
 
-    // the store the added information
-    await createTaskWithSubtasks(projectId, taskName, dueDate, assignedUser.id);
+    try {
+      await addTask({
+        name: taskName,
+        description: taskDescription,
+        projectId,
+        owner: assignedUser.id,
+        dueDate,
+        status: "pending",
+        priority,
+      });
 
-    // Reset form after adding
-    setTaskName("");
-    setTaskDescription("");
-    setDueDate(new Date());
-    setAssignedUser({ id: userId, name: firstName });
-    onTaskAdded();
-    onClose();
+      setTaskName("");
+      setTaskDescription("");
+      setDueDate(new Date());
+      setAssignedUser({ id: userId, name: firstName });
+      setPriority("medium");
+      onTaskAdded();
+      onClose();
+    } catch (error) {
+      Alert.alert("Error", "Failed to add task. Please try again.");
+      console.error("Add Task Error:", error);
+    }
   };
 
   return (
     <Modal transparent={true} visible={visible} animationType="slide">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
+        <View style={GlobalStyles.modalOverlayBottom}>
+          <View style={GlobalStyles.bottomSlideUpModalContainer}>
             <Text style={[GlobalStyles.headerText, styles.modalHeader]}>Add Task</Text>
 
+            {/* Task Name */}
             <TextInput
               style={[GlobalStyles.inputContainer, GlobalStyles.normalTextBlack]}
               placeholder="Task Name"
               placeholderTextColor="black"
               value={taskName}
               onChangeText={setTaskName}
+              accessibilityLabel="Task name input field"
             />
 
+            {/* Task Description */}
             <TextInput
               style={[GlobalStyles.inputContainer, GlobalStyles.normalTextBlack, styles.descriptionInput]}
               placeholder="Task Description"
@@ -77,33 +85,73 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers, 
               numberOfLines={6}
               value={taskDescription}
               onChangeText={setTaskDescription}
+              accessibilityLabel="Task description input field"
             />
 
-            <View style={styles.dueDateContainer}>
-              <Text style={[GlobalStyles.normalText, styles.dueDateLabel]}>Due Date</Text>
-              <Pressable style={[GlobalStyles.inputContainer, styles.dateContainer]} onPress={() => setShowDatePicker(true)}>
+            {/* Due Date */}
+            <Text style={[GlobalStyles.normalText, GlobalStyles.label]}>Due Date</Text>
+            <View style={GlobalStyles.inputContainer}>
+              <Pressable
+                onPress={() => setShowDatePicker(true)}
+                accessibilityLabel="Select due date"
+              >
                 <Text style={GlobalStyles.normalTextBlack}>
                   {`${dueDate.getDate()}/${dueDate.getMonth() + 1}/${dueDate.getFullYear()}`}
                 </Text>
               </Pressable>
             </View>
 
-            {/* ✅ FIXED: Display assignedUser name instead of id */}
-            <View style={styles.userContainer}>
-              <Text style={[GlobalStyles.normalText, styles.userLabel]}>Assign To</Text>
-              <Pressable style={[GlobalStyles.inputContainer, styles.userInput]} onPress={() => setShowUserPicker(true)}>
+            {/* Assign To */}
+            <Text style={[GlobalStyles.normalText, GlobalStyles.label]}>Assign To</Text>
+            <View style={GlobalStyles.inputContainer}>
+              <Pressable
+                onPress={() => setShowUserPicker(true)}
+                accessibilityLabel="Select user to assign task"
+              >
                 <Text style={GlobalStyles.normalTextBlack}>
                   {assignedUser?.name || "Select User"}
                 </Text>
               </Pressable>
             </View>
 
-            <Pressable style={[GlobalStyles.primaryButton, styles.createButton]} onPress={handleAddTask}>
+            {/* Priority */}
+            <View style={GlobalStyles.priorityOptions}>
+              {["low", "medium", "high"].map((level) => {
+                const isSelected = level === priority;
+                const selectedStyle =
+                  level === "low"
+                    ? GlobalStyles.priorityButtonSelectedLow
+                    : level === "medium"
+                    ? GlobalStyles.priorityButtonSelectedMedium
+                    : GlobalStyles.priorityButtonSelectedHigh;
+
+                return (
+                  <Pressable
+                    key={level}
+                    onPress={() => setPriority(level)}
+                    style={[
+                      GlobalStyles.priorityButton,
+                      isSelected && selectedStyle,
+                    ]}
+                    accessibilityLabel={`Set priority to ${level}`}
+                  >
+                    <Text style={GlobalStyles.priorityButtonText}>{level}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Add Task */}
+            <Pressable
+              style={[GlobalStyles.primaryButton, styles.createButton]}
+              onPress={handleAddTask}
+              accessibilityLabel="Create task"
+            >
               <Text style={GlobalStyles.primaryButtonText}>Add Task</Text>
             </Pressable>
 
-            <Pressable onPress={onClose}>
-              <Text style={styles.closeButton}>Close</Text>
+            <Pressable onPress={onClose} accessibilityLabel="Close add task modal">
+              <Text style={GlobalStyles.closeButtonText}>Close</Text>
             </Pressable>
           </View>
         </View>
@@ -119,27 +167,26 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers, 
       <UserPickerModal
         visible={showUserPicker}
         onClose={() => setShowUserPicker(false)}
-        onUserSelected={(user) => setAssignedUser(user)} // ✅ FIXED: store entire user object
+        onUserSelected={(user) => setAssignedUser(user)}
         projectUsers={projectUsers}
       />
     </Modal>
   );
 };
 
-
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)", justifyContent: "flex-end" },
-  modalContainer: { height: "75%", width: "90%", backgroundColor: "#15616D", borderTopLeftRadius: 100, borderTopRightRadius: 100, padding: 20, alignSelf: "center", alignItems: "center" },
-  modalHeader: { marginBottom: 20, marginTop: 20, textAlign: "center" },
-  descriptionInput: { height: 120, textAlignVertical: "top" },
-  dueDateContainer: { width: "100%", marginTop: 10 },
-  dueDateLabel: { paddingLeft: 3 },
-  dateContainer: { justifyContent: "center" },
-  userContainer: { width: "100%", marginTop: 10 },
-  userLabel: { paddingLeft: 3 },
-  userInput: { justifyContent: "center" },
-  createButton: { marginTop: 20 },
-  closeButton: { marginTop: 10, color: "#FFFFFF", textDecorationLine: "underline", textAlign: "center" },
+  modalHeader: {
+    marginBottom: 20,
+    marginTop: 20,
+    textAlign: "center",
+  },
+  descriptionInput: {
+    height: 120,
+    textAlignVertical: "top",
+  },
+  createButton: {
+    marginTop: 20,
+  },
 });
 
 export default AddTaskModal;

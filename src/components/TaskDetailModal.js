@@ -12,11 +12,13 @@ import {
   Modal,
   ActivityIndicator,
   TextInput,
-  StyleSheet,
   Alert,
+  StyleSheet,
 } from "react-native";
+
 import * as DocumentPicker from "expo-document-picker";
-import { FontAwesome } from "@expo/vector-icons";
+import { User, CalendarDays, Paperclip, Image as ImageIcon, MessageCircle, X } from "lucide-react-native";
+
 import { useUser } from "../contexts/UserContext";
 import CustomDatePicker from "./CustomDatePicker";
 import UserPickerModal from "./UserPickerModal";
@@ -25,6 +27,7 @@ import { addActivity } from "../services/activityService";
 
 const TaskDetailModal = ({ task, visible, onClose, onUpdateTask, projectUsers }) => {
   const { userId } = useUser();
+
   const [assignedTo, setAssignedTo] = useState(task.owner);
   const [dueDate, setDueDate] = useState(new Date(task.dueDate));
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -34,53 +37,70 @@ const TaskDetailModal = ({ task, visible, onClose, onUpdateTask, projectUsers })
   const [message, setMessage] = useState("");
   const [showMessageInput, setShowMessageInput] = useState(false);
 
-  console.log("📌 TaskDetailModal Rendered");
-  console.log("📌 Project Users:", projectUsers);
-
-  // Assigned to is the user ID, here we grab the username
-  const assignedUser = projectUsers.find(user => user.id === assignedTo);
+  const assignedUser = projectUsers.find((user) => user.id === assignedTo);
   const assignedUserName = assignedUser ? assignedUser.name : "Unassigned";
 
-  // Handles the file upload
+  // Handles file selection
   const handleFileUpload = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ type: "*/*", multiple: false });
+      const result = await DocumentPicker.getDocumentAsync({ type: "*/*" });
       if (result.canceled) return;
       const file = result.assets[0];
       setSelectedFile({ name: file.name, uri: file.uri, type: file.mimeType });
     } catch (error) {
-      console.error("TaskDetailModal - Error selecting file:", error);
+      console.error("Error selecting file:", error);
     }
   };
 
-  // Handles the image upload
+  // Handles image selection
   const handleImageUpload = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ type: "image/*", multiple: false });
+      const result = await DocumentPicker.getDocumentAsync({ type: "image/*" });
       if (result.canceled) return;
       const file = result.assets[0];
       setSelectedFile({ name: file.name, uri: file.uri, type: file.mimeType });
     } catch (error) {
-      console.error("TaskDetailModal - Error selecting image:", error);
+      console.error("Error selecting image:", error);
     }
   };
 
-  // Handles the uploading of the file and closes the modal after upload
+  // Uploads selected file or message
   const handleConfirmUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile && !message.trim()) {
+      Alert.alert("Nothing to submit", "Please select a file or enter a message.");
+      return;
+    }
+
     setUploading(true);
+
     try {
-      await addActivity(task.projectId, task.id, {
-        type: "file",
-        content: selectedFile.name,
-        fileUrl: selectedFile.uri,
-        timestamp: new Date(),
-        userId,
-      });
+      if (selectedFile) {
+        await addActivity(task.projectId, task.id, {
+          type: "file",
+          content: selectedFile.name,
+          fileUrl: selectedFile.uri,
+          timestamp: new Date(),
+          userId,
+        });
+      }
+
+      if (message.trim()) {
+        await addActivity(task.projectId, task.id, {
+          type: "message",
+          content: message.trim(),
+          timestamp: new Date(),
+          userId,
+        });
+      }
+
+      // Reset and notify parent
       setSelectedFile(null);
-      onClose(); // ✅ Automatically close the modal after upload
+      setMessage("");
+      setShowMessageInput(false);
+      onUpdateTask?.(); // Optional callback if task is updated
+      onClose(); // Close modal
     } catch (error) {
-      console.error("TaskDetailModal - Error uploading file:", error);
+      Alert.alert("Upload Failed", "Unable to upload content.");
     } finally {
       setUploading(false);
     }
@@ -88,58 +108,114 @@ const TaskDetailModal = ({ task, visible, onClose, onUpdateTask, projectUsers })
 
   return (
     <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
+      <View style={GlobalStyles.modalOverlay}>
+        <View style={GlobalStyles.modalContainer}>
           <Text style={[GlobalStyles.headerText, styles.modalHeader]}>{task.name}</Text>
           <Text style={GlobalStyles.normalText}>{task.description}</Text>
 
-          {/* Assigned User Picker */}
-          <TouchableOpacity style={styles.clickableField} onPress={() => setShowUserPicker(true)}>
-            <FontAwesome name="user" size={18} color="orange" />
+          {/* Assigned To */}
+          <TouchableOpacity
+            style={styles.clickableField}
+            onPress={() => setShowUserPicker(true)}
+            accessibilityLabel={`Assigned to ${assignedUserName}`}
+          >
+            <User size={18} color="orange" />
             <Text style={styles.clickableText}>Assigned To: {assignedUserName}</Text>
           </TouchableOpacity>
 
-          {/* Due Date Picker */}
-          <TouchableOpacity style={styles.clickableField} onPress={() => setShowDatePicker(true)}>
-            <FontAwesome name="calendar" size={18} color="orange" />
+          {/* Due Date */}
+          <TouchableOpacity
+            style={styles.clickableField}
+            onPress={() => setShowDatePicker(true)}
+            accessibilityLabel={`Due date: ${dueDate.toDateString()}`}
+          >
+            <CalendarDays size={18} color="orange" />
             <Text style={styles.clickableText}>Due Date: {dueDate.toDateString()}</Text>
           </TouchableOpacity>
 
-          <CustomDatePicker visible={showDatePicker} onClose={() => setShowDatePicker(false)} onDateChange={setDueDate} title="Select Due Date" />
-
-          {/* User Picker Modal - Now returns user ID */}
-          <UserPickerModal
-            visible={showUserPicker}
-            onClose={() => setShowUserPicker(false)}
-            onUserSelected={(user) => setAssignedTo(user.id)} // Store ID, not name
-            projectUsers={projectUsers}
-          />
-
           {/* Upload Buttons */}
           <View style={styles.uploadOptions}>
-            <TouchableOpacity onPress={handleFileUpload} style={styles.uploadIcon}>
-              <FontAwesome name="paperclip" size={30} color="white" />
+            <TouchableOpacity
+              onPress={handleFileUpload}
+              style={styles.uploadIcon}
+              accessibilityLabel="Upload a document"
+            >
+              <Paperclip size={26} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleImageUpload} style={styles.uploadIcon}>
-              <FontAwesome name="image" size={30} color="white" />
+            <TouchableOpacity
+              onPress={handleImageUpload}
+              style={styles.uploadIcon}
+              accessibilityLabel="Upload an image"
+            >
+              <ImageIcon size={26} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowMessageInput(!showMessageInput)}
+              style={styles.uploadIcon}
+              accessibilityLabel="Add a message"
+            >
+              <MessageCircle size={26} color="#fff" />
             </TouchableOpacity>
           </View>
 
-          {/* Submit Button */}
-          <TouchableOpacity 
-            style={GlobalStyles.primaryButton} 
-            onPress={handleConfirmUpload} 
-            disabled={!selectedFile || uploading}
-          >
-            <Text style={GlobalStyles.primaryButtonText}>
-              {uploading ? "Uploading..." : "Submit"}
+          {/* File name display */}
+          {selectedFile && (
+            <Text style={[GlobalStyles.normalText, { marginTop: 8 }]}>
+              Selected: {selectedFile.name}
             </Text>
+          )}
+
+          {/* Message input */}
+          {showMessageInput && (
+            <View style={GlobalStyles.inputContainer}>
+              <TextInput
+                placeholder="Enter a message"
+                placeholderTextColor="#444"
+                value={message}
+                onChangeText={setMessage}
+                multiline
+                style={GlobalStyles.textInput}
+              />
+            </View>
+          )}
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={GlobalStyles.primaryButton}
+            onPress={handleConfirmUpload}
+            disabled={uploading}
+            accessibilityLabel="Submit file or message"
+          >
+            {uploading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={GlobalStyles.primaryButtonText}>Submit</Text>
+            )}
           </TouchableOpacity>
 
           {/* Close Button */}
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity
+            onPress={onClose}
+            accessibilityLabel="Close modal"
+            style={styles.closeContainer}
+          >
+            <X size={20} color="white" />
             <Text style={styles.closeButton}>Close</Text>
           </TouchableOpacity>
+
+          {/* Modals */}
+          <CustomDatePicker
+            visible={showDatePicker}
+            onClose={() => setShowDatePicker(false)}
+            onDateChange={setDueDate}
+            title="Select Due Date"
+          />
+          <UserPickerModal
+            visible={showUserPicker}
+            onClose={() => setShowUserPicker(false)}
+            onUserSelected={(user) => setAssignedTo(user.id)}
+            projectUsers={projectUsers}
+          />
         </View>
       </View>
     </Modal>
@@ -148,21 +224,7 @@ const TaskDetailModal = ({ task, visible, onClose, onUpdateTask, projectUsers })
 
 export default TaskDetailModal;
 
-// ================== Styles ================== //
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    width: "90%",
-    backgroundColor: "#15616D",
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
-  },
   modalHeader: {
     marginBottom: 10,
     textAlign: "center",
@@ -171,23 +233,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
+    alignSelf: "stretch",
   },
   clickableText: {
     marginLeft: 10,
     color: "white",
+    flexShrink: 1,
   },
   uploadOptions: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
+    justifyContent: "space-between",
+    width: "80%",
     marginTop: 20,
+    marginBottom: 10,
   },
   uploadIcon: {
+    backgroundColor: "#1992D4",
     padding: 10,
+    borderRadius: 10,
+  },
+  closeContainer: {
+    alignItems: "center",
+    marginTop: 16,
   },
   closeButton: {
-    marginTop: 15,
     color: "#FFFFFF",
     textDecorationLine: "underline",
+    marginTop: 4,
   },
 });

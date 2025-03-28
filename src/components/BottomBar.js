@@ -11,7 +11,7 @@ import { Home, ClipboardCheck, PlusCircle, CheckCircle, User } from "lucide-reac
 import CreateProjectModal from "./CreateProjectModal";
 import GlobalStyles from "../styles/styles"; 
 
-const BottomBar = ({ navigation, activeScreen, userId }) => {
+const BottomBar = ({ navigation, activeScreen, userId, onProjectCreated }) => {
   // state used for the create projectform visibility
   const [isProjectFormVisible, setProjectFormVisible] = useState(false);
 
@@ -21,7 +21,8 @@ const BottomBar = ({ navigation, activeScreen, userId }) => {
       <CreateProjectModal 
         visible={isProjectFormVisible} 
         onClose={() => setProjectFormVisible(false)} 
-        userId={userId} />
+        userId={userId} 
+        onProjectCreated={onProjectCreated}/>
 
       {/* bottom bar container, holds all the icons */}
       <View style={GlobalStyles.bottomBarContainer}>

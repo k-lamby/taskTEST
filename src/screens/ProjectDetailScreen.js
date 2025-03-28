@@ -18,7 +18,6 @@ import { Plus, CheckCircle, Circle } from "lucide-react-native";
 
 import {
   fetchTasksByProjectId,
-  createTaskWithSubtasks,
   toggleTaskCompletion, 
 } from "../services/taskService";
 import { fetchRecentActivities } from "../services/activityService";
@@ -69,7 +68,7 @@ const ProjectDetailScreen = ({ navigation }) => {
   const fetchActivities = async () => {
     try {
       setLoadingActivities(true);
-      const fetchedActivities = await fetchRecentActivities(projectId);
+      const fetchedActivities = await fetchRecentActivities([projectId]);
       setActivities(fetchedActivities);
     } catch (error) {
       console.error("Error fetching activities:", error);
@@ -112,14 +111,13 @@ const ProjectDetailScreen = ({ navigation }) => {
         <ActivityList activities={activities} loading={loadingActivities} />
 
         {/* Task Creation Modal */}
-        <CreateTaskModal
-          visible={addTaskModalVisible}
-          onClose={() => setAddTaskModalVisible(false)}
-          onTaskAdded={fetchTasks}
-          projectId={projectId}
-          projectUsers={projectUsers}
-          createTaskWithSubtasks={createTaskWithSubtasks}
-        />
+<CreateTaskModal
+  visible={addTaskModalVisible}
+  onClose={() => setAddTaskModalVisible(false)}
+  onTaskAdded={fetchTasks}
+  projectId={projectId}
+  projectUsers={projectUsers}
+/>
 
         {/* Task Detail Modal */}
         {selectedTask && (
