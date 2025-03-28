@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 
-import LoginModal from "../components/LoginModal";
+import LoginModal from "../components/modals/LoginModal";
 import GradientBackground from "../components/GradientBackground";
 
 import GlobalStyles from "../styles/styles";
@@ -21,33 +21,33 @@ const LoginScreen = ({ navigation }) => {
     // gradient and a light blue hive
     <GradientBackground>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
-      <View style={GlobalStyles.fullPageContainer}>
+      <View style={GlobalStyles.container.fullPage}>
         <Image
           source={require("../../assets/images/logo.png")}
-          style={GlobalStyles.logo}
+          style={GlobalStyles.logo.image}
           accessibilityLabel="taskHIVE logo"
         />
-        <Text style={GlobalStyles.logoText}>task</Text>
-        <Text style={GlobalStyles.logoText}>HIVE</Text>
-        <Text style={GlobalStyles.subheaderText}>Transform Chaos Into Clarity</Text>
+        <Text style={GlobalStyles.logo.textLarge}>task</Text>
+        <Text style={GlobalStyles.logo.textLarge}>HIVE</Text>
+        <Text style={GlobalStyles.text.headerMd}>Transform Chaos Into Clarity</Text>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[GlobalStyles.primaryButton, styles.equalWidthButton]}
+            style={[GlobalStyles.button.primary, styles.equalWidthButton]}
             onPress={() => setLoginVisible(true)}
             accessibilityRole="button"
             accessibilityLabel="Log In"
           >
-            <Text style={GlobalStyles.primaryButtonText}>Log In</Text>
+            <Text style={GlobalStyles.button.text}>Log In</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[GlobalStyles.secondaryButton, styles.equalWidthButton]}
+            style={[GlobalStyles.button.secondary, styles.equalWidthButton]}
             onPress={() => navigation.navigate("Signup")}
             accessibilityRole="button"
             accessibilityLabel="Sign Up"
           >
-            <Text style={GlobalStyles.secondaryButtonText}>Sign Up</Text>
+            <Text style={GlobalStyles.button.text}>Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>

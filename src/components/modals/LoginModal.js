@@ -18,10 +18,10 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 
-import { logIn } from "../services/authService";
-import { useUser } from "../contexts/UserContext";
+import { logIn } from "../../services/authService";
+import { useUser } from "../../contexts/UserContext";
 
-import GlobalStyles from "../styles/styles";
+import GlobalStyles from "../../styles/styles";
 
 const LoginModal = ({ visible, onClose, navigation }) => {
   // states for handling the various form inputs
@@ -76,17 +76,17 @@ const LoginModal = ({ visible, onClose, navigation }) => {
       {/** When we press outside the modal, it dismisses the keyboard
        * but doesnt actually close the modal itsel */}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={GlobalStyles.modalOverlay}>
-          <View style={GlobalStyles.modalContainer}>
+        <View style={GlobalStyles.modal.overlay}>
+          <View style={GlobalStyles.modal.container}>
             <KeyboardAvoidingView
-              style={GlobalStyles.modalContent}
+              style={GlobalStyles.modal.content}
               behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
-              <Text style={GlobalStyles.headerText}>Login</Text>
+              <Text style={GlobalStyles.text.headerLg}>Login</Text>
 
               <TextInput
                 ref={usernameInputRef}
-                style={GlobalStyles.textInput}
+                style={GlobalStyles.input.field}
                 placeholder="Email"
                 placeholderTextColor="rgba(255, 255, 255, 0.7)"
                 value={email}
@@ -97,10 +97,8 @@ const LoginModal = ({ visible, onClose, navigation }) => {
                 accessibilityHint="Enter your email"
               />
 
-              <View style={styles.inputSpacing} />
-
               <TextInput
-                style={GlobalStyles.textInput}
+                style={GlobalStyles.input.field}
                 placeholder="Password"
                 placeholderTextColor="rgba(255, 255, 255, 0.7)"
                 secureTextEntry
@@ -113,12 +111,12 @@ const LoginModal = ({ visible, onClose, navigation }) => {
               />
 
               <TouchableOpacity
-                style={GlobalStyles.primaryButton}
+                style={GlobalStyles.button.primary}
                 onPress={handleLogin}
                 accessibilityLabel="Login button"
                 accessibilityHint="Tap to log in"
               >
-                <Text style={GlobalStyles.primaryButtonText}>Login</Text>
+                <Text style={GlobalStyles.button.text}>Login</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -126,7 +124,7 @@ const LoginModal = ({ visible, onClose, navigation }) => {
                 accessibilityLabel="Close button"
                 accessibilityHint="Tap to close the login modal"
               >
-                <Text style={GlobalStyles.closeButtonText}>Close</Text>
+                <Text style={GlobalStyles.text.closeButton}>Close</Text>
               </TouchableOpacity>
             </KeyboardAvoidingView>
           </View>
@@ -134,14 +132,6 @@ const LoginModal = ({ visible, onClose, navigation }) => {
       </TouchableWithoutFeedback>
     </Modal>
   );
-};
-
-// =================Page Specific Styles============== //
-
-const styles = {
-  inputSpacing: {
-    height: 15, 
-  },
 };
 
 export default LoginModal;

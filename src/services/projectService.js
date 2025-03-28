@@ -176,6 +176,32 @@ export const addUserToProject = async (projectId, userEmail) => {
   }
 };
 
+export const fetchProjectById = async (projectId) => {
+  try {
+    const projectRef = doc(db, "projects", projectId);
+    const snapshot = await getDoc(projectRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Project not found.");
+    }
+
+    const data = snapshot.data();
+
+    return {
+      id: snapshot.id,
+      name: data.name || "Untitled",
+      description: data.description || "",
+      ownerId: data.ownerId || "",
+      sharedWith: data.sharedWith || [],
+      archived: data.archived || false,
+      createdAt: data.createdAt,
+    };
+  } catch (error) {
+    console.error("Error fetching project by ID:", error);
+    throw error;
+  }
+}
+
 // CUSTOM HOOK PROJECT SERVICE
 // Allows us to export all the project functions for ease
 export const useProjectService = () => {

@@ -23,6 +23,7 @@ import {
   TasksScreen,
   SettingsScreen,
   ProjectDetailScreen,
+  FilePreviewScreen,
 } from './src/screens';
 
 // create our navigation stack
@@ -109,6 +110,11 @@ export default function App() {
               headerShown: false,
             }}
           />
+          <Stack.Screen
+  name="FilePreview"
+  component={FilePreviewScreen}
+  options={{ headerShown: false }}
+/>
         </Stack.Navigator>
       </NavigationContainer>
     </UserProvider>

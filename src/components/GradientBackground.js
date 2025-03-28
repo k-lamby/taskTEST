@@ -10,11 +10,11 @@ import GlobalStyles from "../styles/styles";
 
 const GradientBackground = ({ children }) => {
   return (
-    <View style={GlobalStyles.gradientContainer}>
+    <View style={GlobalStyles.container.gradient}>
       {/* Set the gradiant colour as the background */}
       <LinearGradient
         colors={["#001524", "#15616D"]}
-        style={GlobalStyles.gradientContainer}
+        style={GlobalStyles.container.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       />
@@ -22,13 +22,13 @@ const GradientBackground = ({ children }) => {
       {/* then image is placed on top of the gradient */}
       <Image
         source={require("../../assets/images/beeHive.png")}
-        style={GlobalStyles.overlayImage}
+        style={GlobalStyles.container.image}
         resizeMode="contain"
         accessible={false}
       />
 
       {/* then we specify where the children all go */}
-      <View style={GlobalStyles.contentContainer}>{children}</View>
+      <View style={GlobalStyles.container.content}>{children}</View>
     </View>
   );
 };

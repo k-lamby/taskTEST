@@ -9,3 +9,4 @@ export { default as ProjectsScreen } from './ProjectsScreen';
 export { default as TasksScreen } from './TasksScreen';
 export { default as SettingsScreen } from './SettingsScreen';
 export { default as ProjectDetailScreen } from './ProjectDetailScreen';
+export { default as FilePreviewScreen } from './FilePreviewScreen';

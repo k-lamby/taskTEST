@@ -1,7 +1,9 @@
-//================== TaskList.js ===========================//
-// Pure presentational component that displays tasks
-// Toggles task status via handler from parent
-//==========================================================//
+//=======================================================//
+// TaskList.js
+// Reusable component to display a list of tasks
+// across one or many projects.
+// Integrates GlobalStyles for consistency and accessibility.
+//=======================================================//
 
 import React, { useState } from "react";
 import {
@@ -12,76 +14,96 @@ import {
   StyleSheet,
 } from "react-native";
 import { CheckCircle, Circle } from "lucide-react-native";
+
 import GlobalStyles from "../styles/styles";
 import { formatDateFirestoreJs } from "../utils/dateUtils";
-import TaskDetailModal from "./TaskDetailModal"; // ✅ Import the modal
+import TaskDetailModal from "./modals/TaskDetailModal";
 
-/**
- * TaskList Component
- * Props:
- * - tasks: Array of task objects
- * - navigation: React Navigation object
- * - onToggleTaskStatus: function(taskId, currentStatus)
- * - projectUsers: Array of users for the project (required for modal)
- */
-const TaskList = ({ tasks, navigation, onToggleTaskStatus, projectUsers = [] }) => {
+const TaskList = ({
+  tasks = [],
+  navigation,
+  onToggleTaskStatus,
+  title = "Featured Tasks",
+  showSeeMore = true,
+  rightAction = null,
+  projectUsers = [],
+  projectUsersMap = null,
+}) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Open modal for a specific task
   const openTaskModal = (task) => {
     setSelectedTask(task);
     setModalVisible(true);
   };
 
-  // Close modal
   const closeModal = () => {
     setModalVisible(false);
     setSelectedTask(null);
   };
 
+  const getPriorityStyle = (priority) => {
+    switch (priority) {
+      case "high":
+        return GlobalStyles.priority.high;
+      case "medium":
+        return GlobalStyles.priority.medium;
+      case "low":
+        return GlobalStyles.priority.low;
+      default:
+        return {};
+    }
+  };
+
   return (
-    <View style={GlobalStyles.sectionContainer}>
-      <View style={GlobalStyles.sectionHeader}>
-        <Text style={GlobalStyles.sectionTitle}>Featured Tasks</Text>
+    <View style={GlobalStyles.layout.container}>
+      {/* 🔠 Section Header */}
+      <View style={GlobalStyles.layout.header}>
+        <Text style={GlobalStyles.layout.title}>{title}</Text>
+        {rightAction}
       </View>
 
+      {/* 📋 Task List or Empty State */}
       {tasks.length === 0 ? (
-        <Text style={GlobalStyles.translucentText}>No tasks found.</Text>
+        <Text style={GlobalStyles.text.translucent}>No tasks found.</Text>
       ) : (
         <FlatList
           data={tasks}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => {
             const isCompleted = item.status === "completed";
             const TaskIcon = isCompleted ? CheckCircle : Circle;
 
             return (
-              <View style={styles.taskRow}>
-                {/* Checkbox toggle button */}
+              <View style={GlobalStyles.layout.listItem}>
+                {/* 🏳️ Priority Flag */}
+                <View
+                  style={[styles.priorityFlag, getPriorityStyle(item.priority)]}
+                  accessibilityLabel={`Priority: ${item.priority}`}
+                  accessible
+                />
+
+                {/* ✅ Status Checkbox */}
                 <TouchableOpacity
                   onPress={() => onToggleTaskStatus(item.id, item.status)}
-                  accessibilityLabel={`Mark task "${item.name}" as ${
-                    isCompleted ? "pending" : "completed"
-                  }`}
-                  accessible={true}
+                  accessibilityLabel={`Mark task "${item.name}" as ${isCompleted ? "pending" : "completed"}`}
                   style={styles.checkboxWrapper}
                 >
                   <TaskIcon
                     color={isCompleted ? "#4CAF50" : "#999"}
-                    size={22}
+                    size={18}
                   />
                 </TouchableOpacity>
 
-                {/* Task Title opens modal */}
+                {/* 🔤 Task Title */}
                 <TouchableOpacity
                   onPress={() => openTaskModal(item)}
                   style={styles.taskTitleWrapper}
                   accessibilityLabel={`Open task details for ${item.name}`}
-                  accessible={true}
                 >
                   <Text
                     style={[
-                      GlobalStyles.normalText,
+                      GlobalStyles.text.white,
                       styles.taskTitle,
                       isCompleted && styles.completedText,
                     ]}
@@ -90,9 +112,9 @@ const TaskList = ({ tasks, navigation, onToggleTaskStatus, projectUsers = [] }) 
                   </Text>
                 </TouchableOpacity>
 
-                {/* Due date */}
+                {/* 🗓 Due Date */}
                 <Text
-                  style={styles.dueDateText}
+                  style={GlobalStyles.text.translucentSmall}
                   accessibilityLabel={`Due date: ${formatDateFirestoreJs(item.dueDate)}`}
                 >
                   {formatDateFirestoreJs(item.dueDate)}
@@ -100,49 +122,45 @@ const TaskList = ({ tasks, navigation, onToggleTaskStatus, projectUsers = [] }) 
               </View>
             );
           }}
-          keyExtractor={(item) => item.id.toString()}
         />
       )}
 
-      {/* "See More" button */}
-      <TouchableOpacity
-        style={GlobalStyles.seeMore}
-        onPress={() => navigation.navigate("Tasks")}
-        accessibilityLabel="See more tasks"
-        accessible={true}
-      >
-        <Text style={GlobalStyles.seeMoreText}>See More →</Text>
-      </TouchableOpacity>
+      {/* 🔗 See More CTA */}
+      {showSeeMore && (
+        <TouchableOpacity
+          style={GlobalStyles.layout.seeMore}
+          onPress={() => navigation.navigate("Tasks")}
+          accessibilityLabel="See more tasks"
+        >
+          <Text style={GlobalStyles.text.highlight}>See More →</Text>
+        </TouchableOpacity>
+      )}
 
-      {/* ✅ Task Detail Modal */}
+      {/* 🪟 Task Detail Modal */}
       {selectedTask && (
         <TaskDetailModal
           task={selectedTask}
           visible={modalVisible}
           onClose={closeModal}
           onUpdateTask={() => {}}
-          projectUsers={projectUsers}
+          projectUsers={
+            projectUsersMap
+              ? projectUsersMap[selectedTask.projectId] || []
+              : projectUsers
+          }
         />
       )}
     </View>
   );
 };
 
-export default TaskList;
-
-// ================== Local Styles ================== //
 const styles = StyleSheet.create({
-  taskRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
   checkboxWrapper: {
-    padding: 3,
+    padding: 3, // Ensures touchable area is large enough
   },
   taskTitleWrapper: {
     flex: 1,
-    paddingLeft: 10,
+    paddingLeft: 5,
     justifyContent: "center",
   },
   taskTitle: {
@@ -152,10 +170,12 @@ const styles = StyleSheet.create({
     textDecorationLine: "line-through",
     color: "#888",
   },
-  dueDateText: {
-    fontSize: 12,
-    color: "#666",
-    textAlign: "right",
-    minWidth: 60,
+  priorityFlag: {
+    width: 6,
+    height: 20,
+    borderRadius: 3,
+    marginRight: 6,
   },
 });
+
+export default TaskList;

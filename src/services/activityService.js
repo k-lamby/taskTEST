@@ -14,6 +14,44 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
+export const fetchActivitiesForTasks = async (taskIds) => {
+  try {
+    if (!Array.isArray(taskIds) || taskIds.length === 0) {
+      return [];
+    }
+
+    const allActivities = [];
+    const batchSize = 10;
+
+    // 🔁 Process in batches of 10 to comply with Firestore's 'in' clause limit
+    for (let i = 0; i < taskIds.length; i += batchSize) {
+      const batch = taskIds.slice(i, i + batchSize);
+
+      const activitiesQuery = query(
+        collection(db, "activities"),
+        where("taskId", "in", batch),
+        orderBy("timestamp", "desc")
+      );
+
+      const snapshot = await getDocs(activitiesQuery);
+
+      const batchActivities = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      allActivities.push(...batchActivities);
+    }
+
+    // 🧹 Sort all combined results by timestamp (most recent first)
+    return allActivities.sort(
+      (a, b) => b.timestamp.toMillis() - a.timestamp.toMillis()
+    );
+  } catch (error) {
+    console.error("❌ Error fetching activities for tasks:", error);
+    throw error;
+  }
+};
 
 export const fetchRecentActivities = async (projectIds, maxActivities = null) => {
   try {

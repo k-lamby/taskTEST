@@ -20,10 +20,10 @@ import Icon from "react-native-vector-icons/Feather";
 
 import AddUserModal from "./AddUserModal";
 import CustomDatePicker from "./CustomDatePicker";
-import { useProjectService } from "../services/projectService";
-import { useUser } from "../contexts/UserContext";
+import { useProjectService } from "../../services/projectService";
+import { useUser } from "../../contexts/UserContext";
 
-import GlobalStyles from "../styles/styles";
+import GlobalStyles from "../../styles/styles";
 
 const { height, width } = Dimensions.get("window");
 

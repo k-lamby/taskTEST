@@ -1,6 +1,6 @@
 //================== EditProjectModal.js ===========================//
 // Modal to edit an existing project's name and description.
-// Integrates clearly with projectService to persist changes.
+// Uses GlobalStyles for consistent styling and accessibility.
 //==================================================================//
 
 import React, { useState, useEffect } from "react";
@@ -15,8 +15,8 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import { useProjectService } from "../services/projectService";
-import GlobalStyles from "../styles/styles";
+import { useProjectService } from "../../services/projectService";
+import GlobalStyles from "../../styles/styles";
 
 const EditProjectModal = ({ visible, onClose, project }) => {
   const [projectName, setProjectName] = useState("");
@@ -25,7 +25,7 @@ const EditProjectModal = ({ visible, onClose, project }) => {
 
   const { updateProject } = useProjectService();
 
-  // Populate fields with project data when modal opens
+  // Populate fields when modal opens
   useEffect(() => {
     if (project) {
       setProjectName(project.name);
@@ -33,7 +33,6 @@ const EditProjectModal = ({ visible, onClose, project }) => {
     }
   }, [project, visible]);
 
-  // Handle updating project details
   const handleUpdateProject = async () => {
     if (!projectName.trim()) {
       Alert.alert("Validation Error", "Project name cannot be empty.");
@@ -43,10 +42,10 @@ const EditProjectModal = ({ visible, onClose, project }) => {
     setLoading(true);
     try {
       await updateProject(project.id, {
-        name: projectName,
-        description: projectDescription,
+        name: projectName.trim(),
+        description: projectDescription.trim(),
       });
-      onClose(); // Close modal after success
+      onClose();
     } catch (error) {
       console.error("❌ Error updating project:", error);
       Alert.alert("Update Failed", "Please try again.");
@@ -58,47 +57,54 @@ const EditProjectModal = ({ visible, onClose, project }) => {
   return (
     <Modal transparent animationType="slide" visible={visible}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalHeader}>Edit Project</Text>
+        <View style={GlobalStyles.modal.overlay}>
+          <View style={GlobalStyles.modal.container}>
+            {/* 📝 Modal Title */}
+            <Text style={[GlobalStyles.text.headerMd, styles.modalHeader]}>
+              Edit Project
+            </Text>
 
-            {/* Project Name Input */}
+            {/* 🧾 Project Name Input */}
             <TextInput
-              style={styles.input}
+              style={GlobalStyles.input.field}
               placeholder="Project Name"
-              placeholderTextColor="#888"
+              placeholderTextColor="#555"
               value={projectName}
               onChangeText={setProjectName}
               accessibilityLabel="Project Name Input"
+              autoFocus
             />
 
-            {/* Project Description Input */}
+            {/* 🧾 Project Description Input */}
             <TextInput
-              style={[styles.input, styles.descriptionInput]}
+              style={[GlobalStyles.input.field, GlobalStyles.input.multiline]}
               placeholder="Project Description"
-              placeholderTextColor="#888"
+              placeholderTextColor="#555"
               value={projectDescription}
+              onChangeText={setProjectDescription}
               multiline
               numberOfLines={4}
-              onChangeText={setProjectDescription}
               accessibilityLabel="Project Description Input"
             />
 
-            {/* Update Button */}
+            {/* ✅ Update Button */}
             <TouchableOpacity
-              style={GlobalStyles.primaryButton}
+              style={GlobalStyles.button.primary}
               onPress={handleUpdateProject}
               disabled={loading}
               accessibilityLabel="Update Project Button"
             >
-              <Text style={GlobalStyles.primaryButtonText}>
+              <Text style={GlobalStyles.button.text}>
                 {loading ? "Updating..." : "Update Project"}
               </Text>
             </TouchableOpacity>
 
-            {/* Cancel Button */}
-            <TouchableOpacity onPress={onClose} accessibilityLabel="Cancel Edit Button">
-              <Text style={styles.closeButton}>Cancel</Text>
+            {/* ❌ Cancel Button */}
+            <TouchableOpacity
+              onPress={onClose}
+              accessibilityLabel="Cancel Edit Button"
+            >
+              <Text style={GlobalStyles.text.closeButton}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -107,45 +113,11 @@ const EditProjectModal = ({ visible, onClose, project }) => {
   );
 };
 
-// Component-specific styles clearly defined
+export default EditProjectModal;
+
+// ========== Local Styles (Minimal) ==========
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    width: "90%",
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
-  },
   modalHeader: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 15,
-    color: "#15616D",
-  },
-  input: {
-    width: "100%",
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginVertical: 8,
-    color: "#000",
-  },
-  descriptionInput: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-  closeButton: {
-    marginTop: 12,
-    color: "#15616D",
-    textDecorationLine: "underline",
+    marginBottom: 20,
   },
 });
-
-export default EditProjectModal;

@@ -15,9 +15,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { selectFile, uploadFile } from "../services/storageService";
+import { selectFile, uploadFile } from "../../services/storageService";
 import { collection, addDoc } from "firebase/firestore";
-import { auth, db } from "../config/firebaseConfig";
+import { auth, db } from "../../config/firebaseConfig";
 
 const AddActivityModal = ({ visible, onClose, projectId }) => {
   // define our various states, these will be used for storing

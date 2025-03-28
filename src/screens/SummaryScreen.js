@@ -1,10 +1,18 @@
-//================== SummaryScreen.js ===========================//
-// This is the landing page for the user on login. It displays
-// featured projects, featured tasks, and any recent activity.
-//================================================================//
+//=======================================================//
+// SummaryScreen.js
+// This is the landing screen after login.
+// Displays featured projects, assigned tasks, and activity.
+// Dynamically fetches project users for task assignment logic.
+//=======================================================//
 
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, FlatList, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+} from "react-native";
 import { FolderKanban } from "lucide-react-native";
 
 import TopBar from "../components/TopBar";
@@ -14,66 +22,88 @@ import TaskList from "../components/TaskList";
 import ActivityList from "../components/ActivityList";
 
 import { useProjectService } from "../services/projectService";
-import { fetchTasksForUser, toggleTaskCompletion } from "../services/taskService";
+import {
+  fetchTasksForUser,
+  toggleTaskCompletion,
+} from "../services/taskService";
 import { fetchRecentActivities } from "../services/activityService";
-import { useUser } from "../contexts/UserContext";
+import { fetchUserNamesByIds } from "../services/authService";
+import { fetchProjectUserIds } from "../services/projectService";
 
+import { useUser } from "../contexts/UserContext";
 import GlobalStyles from "../styles/styles";
 
 const SummaryScreen = ({ navigation }) => {
-  // states for storing the data collected from the database
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [projectUsersMap, setProjectUsersMap] = useState({});
 
-  // grab the user details from the user context
   const { userId, firstName } = useUser();
-  // import fetch projects for grabbing the data
   const { fetchProjects } = useProjectService();
 
-  // ===============================================================
-  // fetchData utilises the various services
-  // to pull the data forward and store it in local state
-  // ===============================================================
+  //======================================================
+  // Load featured projects, assigned tasks, and activities
+  // Also fetch project users for task modal functionality
+  //======================================================
   const fetchData = useCallback(async () => {
     try {
-      // grab the top 3 projects
+      // 1️⃣ Fetch top 3 projects
       const projectData = await fetchProjects();
-      setProjects(projectData.slice(0, 3));
+      const topProjects = projectData.slice(0, 3);
+      setProjects(topProjects);
 
-      // grab the top 3 tasks assigned to the current user
+      // 2️⃣ Fetch top 3 tasks assigned to current user
       const assignedTasks = await fetchTasksForUser(userId, 3);
       setTasks(assignedTasks);
 
-      // grab the top 3 most recent activities
-      const maxActivities = 3;
+      // 3️⃣ Fetch recent activity (limit 3)
+      const projectIds = projectData.map((p) => p.id);
+      const recentActivities = await fetchRecentActivities(projectIds, 3);
+      const enrichedActivities = recentActivities.map((activity) => {
+        const project = projectData.find(p => p.id === activity.projectId);
+        const title = project ? project.name : "Unnamed Project";
+      
+        return {
+          ...activity,
+          title,
+          };
+      });
+      setActivities(enrichedActivities);
 
-      // fetchRecentActivities expects an array of project ids
-      const projectIds = projectData.map((project) => project.id);
-      const recentActivities = await fetchRecentActivities(projectIds, maxActivities);
-      setActivities(recentActivities);
+      // 4️⃣ Fetch project users for each referenced project
+      const usersByProject = {};
+
+      for (const project of topProjects) {
+        const userIds = await fetchProjectUserIds(project.id);
+        const userMap = await fetchUserNamesByIds(userIds);
+        usersByProject[project.id] = Object.entries(userMap).map(
+          ([id, name]) => ({
+            id,
+            name,
+          })
+        );
+      }
+
+      setProjectUsersMap(usersByProject);
     } catch (err) {
-      // if there are any errors then just display an alert for now
-      Alert.alert("Error fetching data:", err.message);
+      Alert.alert("Error fetching data", err.message);
+      console.error("❌ SummaryScreen fetch error:", err);
     }
   }, [fetchProjects, userId]);
 
-  // ===============================================================
-  // useEffect runs on initial mount to populate the dashboard data
-  // ===============================================================
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // ===============================================================
-  // function to handle toggling a task's completion status
-  // updates local task state and persists to Firebase
-  // ===============================================================
+  //======================================================
+  // Toggle completion status of a task assigned to user
+  //======================================================
   const handleToggleTaskStatus = async (taskId, currentStatus) => {
     try {
       await toggleTaskCompletion(taskId, currentStatus, userId);
 
-      // update the local task list to reflect the change
+      // Update local state for immediate UI feedback
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === taskId
@@ -90,69 +120,81 @@ const SummaryScreen = ({ navigation }) => {
     }
   };
 
+  //======================================================
+  // Render Featured Projects List
+  //======================================================
+  const renderProjects = () => (
+    <View style={GlobalStyles.layout.container}>
+      <View style = {GlobalStyles.layout.header}>
+        <Text style={GlobalStyles.layout.title}>Featured Projects</Text>
+      </View>
+
+      {projects.length === 0 ? (
+        <Text style={GlobalStyles.text.translucent}>No projects found.</Text>
+      ) : (
+        <FlatList
+          data={projects}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={GlobalStyles.layout.listItem}
+              onPress={() =>
+                navigation.navigate("ProjectDetail", {
+                  projectId: item.id,
+                  projectName: item.name,
+                })
+              }
+              accessibilityLabel={`Open project: ${item.name}`}
+              accessible={true}
+            >
+              <FolderKanban size={18} color="#FFA500" />
+              <Text style={[GlobalStyles.text.white, { paddingLeft: 10 }]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
+      <TouchableOpacity
+        style={GlobalStyles.layout.seeMore}
+        onPress={() => navigation.navigate("Projects")}
+        accessibilityLabel="See more projects"
+        accessible={true}
+      >
+        <Text style={GlobalStyles.text.highlight}>See More →</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <GradientBackground>
-      {/* TopBar with greeting */}
       <TopBar title={`Welcome, ${firstName || "User"}!`} />
-      <View style={GlobalStyles.container}>
 
-        {/* Project List Component, not reusable as this is only used here */}
-        <View style={GlobalStyles.sectionContainer}>
-          <View style={GlobalStyles.sectionHeader}>
-            <Text style={GlobalStyles.sectionTitle}>Featured Projects</Text>
-          </View>
+      <View style={GlobalStyles.container.base}>
+        {/* ✅ Featured Projects */}
+        {renderProjects()}
 
-          {projects.length === 0 ? (
-            <Text style={GlobalStyles.translucentText}>No projects found.</Text>
-          ) : (
-            // clicking on a project will navigate you through to the project detail page
-            <FlatList
-              data={projects}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={GlobalStyles.listItem}
-                  onPress={() => navigation.navigate("ProjectDetail", { projectId: item.id })}
-                  accessibilityLabel={`Open project: ${item.name}`}
-                  accessible={true}
-                >
-                  <FolderKanban color="#FFA500" size={18} />
-                  <Text style={[GlobalStyles.normalText, { paddingLeft: 10 }]}>
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item.id.toString()}
-            />
-          )}
-
-          {/* Clicking on the see more navigates to the project summary */}
-          <TouchableOpacity
-            style={GlobalStyles.seeMore}
-            onPress={() => navigation.navigate("Projects")}
-            accessibilityLabel="See more projects"
-            accessible={true}
-          >
-            <Text style={GlobalStyles.seeMoreText}>See More →</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Reusable task list component */}
+        {/* ✅ Featured Tasks with dynamic project users */}
         <TaskList
           tasks={tasks}
           navigation={navigation}
           onToggleTaskStatus={handleToggleTaskStatus}
+          title="Your Featured Tasks"
+          showSeeMore={true}
+          projectUsersMap={projectUsersMap}
         />
 
-        {/* Reusable activity feed component */}
+        {/* ✅ Recent Activity */}
         <ActivityList activities={activities} navigation={navigation} />
       </View>
 
-      {/* Persistent bottom bar with modal trigger and navigation */}
-      <BottomBar 
-        navigation={navigation} 
-        activeScreen="Summary" 
+      {/* ✅ Bottom Navigation Bar */}
+      <BottomBar
+        navigation={navigation}
+        activeScreen="Summary"
         userId={userId}
-        onProjectCreated={fetchData} // ✅ refresh project list on new project
+        onProjectCreated={fetchData} // Refreshes project list on new project creation
       />
     </GradientBackground>
   );

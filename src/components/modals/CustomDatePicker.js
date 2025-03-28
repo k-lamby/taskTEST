@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import GlobalStyles from '../styles/styles';
+import GlobalStyles from '../../styles/styles';
 
 const CustomDatePicker = ({ visible, onClose, onDateChange, title }) => {
     const [date, setDate] = useState(new Date());
