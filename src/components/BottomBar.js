@@ -1,6 +1,8 @@
 //================== BottomBar.js ===========================//
-// This component provides a fixed bottom navigation bar with accessible icons.
-// It uses lucide-react-native icons and integrates with your style system.
+// bottom navigation bar, present through most screens in 
+// the application, displays icons that are highlighted
+// depending on the page
+// also includes the create project modal
 //===========================================================//
 
 import React, { useState } from "react";
@@ -11,19 +13,18 @@ import CreateProjectModal from "./modals/CreateProjectModal";
 import GlobalStyles from "../styles/styles";
 
 const BottomBar = ({ navigation, activeScreen, userId, onProjectCreated }) => {
+  // state to handle the visibility of the project
   const [isProjectFormVisible, setProjectFormVisible] = useState(false);
-
   return (
     <SafeAreaView style={GlobalStyles.nav.safeArea}>
-      {/* Modal for creating a new project */}
+      {/* modal for creating a project */}
       <CreateProjectModal
         visible={isProjectFormVisible}
         onClose={() => setProjectFormVisible(false)}
         userId={userId}
         onProjectCreated={onProjectCreated}
       />
-
-      {/* Bottom navigation icon row */}
+      {/* icon set along the bottom */}
       <View style={GlobalStyles.nav.bottomBarContainer}>
         <NavButton
           icon={Home}
@@ -39,14 +40,13 @@ const BottomBar = ({ navigation, activeScreen, userId, onProjectCreated }) => {
           navigation={navigation}
           activeScreen={activeScreen}
         />
-
-        {/* Central Create Project Button */}
+        {/* central button is used to open and close the create project modal */}
         <TouchableOpacity
           onPress={() => setProjectFormVisible(true)}
           style={[
             GlobalStyles.nav.iconContainer,
             {
-              backgroundColor: "#FFA500", // highlight the central action
+              backgroundColor: "#15616D",
               borderRadius: 30,
               padding: 10,
               marginHorizontal: 8,
@@ -77,7 +77,7 @@ const BottomBar = ({ navigation, activeScreen, userId, onProjectCreated }) => {
   );
 };
 
-//================== Reusable Nav Button =====================//
+// reusable navbutton component
 const NavButton = ({ icon: Icon, label, screen, navigation, activeScreen }) => {
   const isActive = activeScreen === screen;
 

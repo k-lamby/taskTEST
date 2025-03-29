@@ -27,18 +27,22 @@ const ActivityList = ({
   title = "Recent Activities",
   filtersEnabled = false,
 }) => {
+  // various states for storing the states of the modal
   const [userNames, setUserNames] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [activeTab, setActiveTab] = useState("collab");
 
-  // ===================== Filter Tabs ===================== //
+  //tabs allow the user to filter which activity they
+  // want to prioritise
+  // this isnt always visible
   const tabs = [
     { key: "all", label: "All" },
     { key: "status", label: "Status Update" },
     { key: "collab", label: "Files & Messages" },
   ];
 
+  // handle the grouping of the activity type into groups
   const isTypeMatch = (type, tab) => {
     switch (tab) {
       case "all":
@@ -52,34 +56,38 @@ const ActivityList = ({
     }
   };
 
+  //filters the activities to get those that match the tab
   const filteredActivities = activities.filter((a) =>
     isTypeMatch(a.type, activeTab)
   );
 
-  // ================= Load User Display Names ================= //
   useEffect(() => {
+    // we need to grab all the usernames associated with the activities being displayed
     const loadUserNames = async () => {
+      // get a list of all the unique user ids
       const uniqueUserIds = [
         ...new Set(activities.map((a) => a.userId).filter(Boolean)),
       ];
       if (uniqueUserIds.length === 0) return;
-
       try {
+        // then use the auth fenction to fetch their names
+        // returns a map and then stores it in the state
         const namesMap = await fetchUserNamesByIds(uniqueUserIds);
         setUserNames(namesMap);
       } catch (error) {
-        console.error("❌ Failed to fetch user names:", error);
       }
     };
-
     loadUserNames();
   }, [activities]);
 
-  // =================== Handle Activity Tap =================== //
+  // when we click on an activity, it depends on what the activity is
+  // as to what we do
   const handleActivityPress = (activity) => {
     const userName = userNames[activity.userId] || "Someone";
 
     switch (activity.type) {
+      // if it is a message, comment or status change
+      // we display the modal with basic information
       case "message":
       case "comment":
       case "status":
@@ -87,7 +95,8 @@ const ActivityList = ({
         setSelectedActivity({ ...activity, userName });
         setModalVisible(true);
         break;
-
+      // if it is a file or image, we redirect them to the file preview
+      // screen to view it.
       case "file":
       case "image":
         if (activity.fileUrl) {
@@ -98,9 +107,6 @@ const ActivityList = ({
           });
         }
         break;
-
-      default:
-        navigation.navigate("ActivityDetail", { activityId: activity.id });
     }
   };
 

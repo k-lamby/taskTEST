@@ -1,34 +1,49 @@
-//================== firebaseConfig.js===========================//
-// Handle the api details and configuration for firebase 
-// utility functions are in the service folder
-//===============================================================//
+// ================== firebaseConfig.js =========================== //
+// Handles the secure configuration and initialization of Firebase.
+// load firebase api keys etc from environment variables
+// =================================================================
 
 import { initializeApp } from "firebase/app";
-import { getFirestore } from 'firebase/firestore'; 
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth'; 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getStorage } from 'firebase/storage';
+import { getFirestore } from "firebase/firestore";
+import {
+  initializeAuth,
+  getReactNativePersistence,
+} from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getStorage } from "firebase/storage";
 
-// configuration details provided by firebase
+// Load environment variables from .env
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID,
+  FIREBASE_MEASUREMENT_ID,
+} from "@env";
+
+// configure firebase, set up provided by firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyAtvVbmFWVMrZXouvgFLVZsLWwHRzxjMmo",
-  authDomain: "taskhive-4edce.firebaseapp.com",
-  projectId: "taskhive-4edce",
-  storageBucket: "taskhive-4edce.firebasestorage.app",
-  messagingSenderId: "49192012242",
-  appId: "1:49192012242:web:5366eb06970a8213f7e00b",
-  measurementId: "G-ECX6NK3VQ1"
-  };
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
+  measurementId: FIREBASE_MEASUREMENT_ID,
+};
 
-// initialise the app instance with the configuration details
 const app = initializeApp(firebaseConfig);
-// initialise the firestore database instance for the app
 const db = getFirestore(app);
-// initialise the authentication for the app
-// allow persistence even after the app is closed
+
+// firebase authentication, and allow persistent login
 const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
+  persistence: getReactNativePersistence(AsyncStorage),
 });
 
+// firebase storage for images and files
 const storage = getStorage(app);
+
+// export initialized services for use in application
 export { db, auth, storage };

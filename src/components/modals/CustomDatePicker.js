@@ -1,81 +1,62 @@
+//================== CustomDatePicker.js =======================//
+// This is a custom date picker modal, utilises the spin style
+// to allow the user to select a due date
+//==============================================================//
+
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, Modal, Pressable } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import GlobalStyles from '../../styles/styles';
 
 const CustomDatePicker = ({ visible, onClose, onDateChange, title }) => {
-    const [date, setDate] = useState(new Date());
+  // state to get the new date, formatted as a date
+  const [date, setDate] = useState(new Date());
 
-    // Handler for when the user changes the date picker
-    const handleDateChange = (event, selectedDate) => {
-        const currentDate = selectedDate || date;
-        setDate(currentDate); 
-    };
+  // handler for managing the date change
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setDate(currentDate);
+  };
 
-    // Called when the user hits the done button
-    const handleDone = () => {
-        onDateChange(date);
-        onClose();
-    };
+  // once done, we then pass the date back to the parent 
+  // and close the modal
+  const handleDone = () => {
+    onDateChange(date);
+    onClose();
+  };
 
-    return (
-        <Modal visible={visible} animationType="slide" transparent={true}>
-            <View style={styles.overlay}>
-                <View style={styles.modalContainer}>
-                    {/* Custom title for the modal */}
-                    <Text style={GlobalStyles.headerText}>{title}</Text>
-                    
-                    <DateTimePicker
-                        value={date}
-                        mode="date" 
-                        display="spinner"
-                        onChange={handleDateChange}
-                    />
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={GlobalStyles.modal.overlay}>
+        <View style={GlobalStyles.modal.container}>
+          <Text style={GlobalStyles.text.headerMd}>{title}</Text>
 
-                    {/* Button container */}
-                    <View style={styles.buttonContainer}>
-                        <Pressable style={GlobalStyles.primaryButton} onPress={handleDone}>
-                            <Text style={GlobalStyles.primaryButtonText}>Done</Text>
-                        </Pressable>
-                        <Pressable onPress={onClose}>
-                            <Text style={styles.closeButton}>Close</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </View>
-        </Modal>
-    );
+          {/* Use the date time picker from the react community */}
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="spinner"
+            onChange={handleDateChange}
+            style={{ width: '100%' }}
+          />
+          <View style={{ width: '100%', marginTop: 20, gap: 10, alignItems: 'center' }}>
+            <Pressable
+              style={GlobalStyles.button.primary}
+              onPress={handleDone}
+              accessibilityLabel="Confirm date selection"
+            >
+              <Text style={GlobalStyles.button.text}>Done</Text>
+            </Pressable>
+
+            <Pressable onPress={onClose} accessibilityLabel="Close date picker">
+              <Text style={GlobalStyles.text.closeButton}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 };
-
-// Styles for the component
-const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContainer: {
-        width: '80%',
-        backgroundColor: '#001524', 
-        borderRadius: 20,
-        padding: 20, 
-        alignItems: 'center',
-    },
-    buttonContainer: {
-        flexDirection: 'column', // ✅ Stacks buttons vertically
-        alignItems: 'center',
-        width: '100%',
-        marginTop: 20,
-        gap: 10, // Adds spacing between the buttons
-    },
-    closeButton: {
-        marginTop: 10,
-        color: "#FFFFFF",
-        textDecorationLine: "underline",
-        textAlign: "center",
-    },
-});
 
 export default CustomDatePicker;

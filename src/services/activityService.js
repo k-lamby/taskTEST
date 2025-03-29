@@ -13,6 +13,7 @@ import {
   addDoc,
   Timestamp,
 } from "firebase/firestore";
+import { sendPushNotificationToProjectUsers } from "./notificationService";
 
 export const fetchActivitiesForTasks = async (taskIds) => {
   try {
@@ -97,13 +98,13 @@ export const addActivity = async ({
   type,
   content,
   fileUrl = null,
+  taskName = "",  // Optional: for better message content
 }) => {
   try {
-    // check to make sure the required data is present
     if (!projectId || !taskId || !userId) {
       throw new Error("Project ID, Task ID, and User ID are required.");
     }
-    // then push the new activity to the database
+
     const docRef = await addDoc(collection(db, "activities"), {
       projectId,
       taskId,
@@ -113,9 +114,37 @@ export const addActivity = async ({
       fileUrl,
       timestamp: Timestamp.now(),
     });
-    // and return the activity id
+
+    // ✅ Only trigger push for file, image, or comment
+    const shouldNotify = ["file", "image", "message"].includes(type);
+    if (shouldNotify) {
+      let title = "";
+      let body = "";
+
+      if (type === "message") {
+        title = "💬 New Comment";
+        body = `${content.slice(0, 40)}${content.length > 40 ? "..." : ""}`;
+      } else {
+        title = "📎 New File Uploaded";
+        body = `${content}`;
+      }
+
+      await sendPushNotificationToProjectUsers({
+        projectId,
+        senderId: userId,
+        title,
+        body,
+        data: {
+          activityType: type,
+          taskId,
+          taskName,
+        },
+      });
+    }
+
     return docRef.id;
   } catch (error) {
+    console.error("❌ Error adding activity:", error);
     throw error;
   }
 };

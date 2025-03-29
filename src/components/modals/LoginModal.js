@@ -28,10 +28,9 @@ const LoginModal = ({ visible, onClose, navigation }) => {
   const usernameInputRef = useRef(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   // context hook for passing current user settings through
+  // this then gets used throughout the application
   const { setUserId, setUserEmail, setFirstName } = useUser();
-
   // wait a moment, and then make sure the user name is focused
   useEffect(() => {
     if (visible) {
@@ -40,23 +39,19 @@ const LoginModal = ({ visible, onClose, navigation }) => {
       }, 100);
     }
   }, [visible]);
-
   // handle the login, we try to authenticate,
   // set the user context details for use throughout the app
   const handleLogin = async () => {
     try {
       const user = await logIn(email, password);
-
       // Update global user context with authenticated user details
       // while authentication automatically updates these, it does it
       // asyncronously, so we force the issue here
       setUserId(user.uid);
       setUserEmail(user.email);
-
       //https://medium.com/bsadd/optional-chaining-in-react-native-805a374788d3
       const firstName = user.displayName ? user.displayName.split(" ")[0] : "User";
       setFirstName(firstName);
-
       // Close the modal and navigate to the summary screen
       onClose();
       navigation.navigate("Summary");
@@ -65,7 +60,6 @@ const LoginModal = ({ visible, onClose, navigation }) => {
       Alert.alert("Login Error", error.message);
     }
   };
-
   return (
     <Modal
       animationType="fade"
@@ -83,7 +77,6 @@ const LoginModal = ({ visible, onClose, navigation }) => {
               behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
               <Text style={GlobalStyles.text.headerLg}>Login</Text>
-
               <TextInput
                 ref={usernameInputRef}
                 style={GlobalStyles.input.field}
@@ -96,7 +89,6 @@ const LoginModal = ({ visible, onClose, navigation }) => {
                 accessibilityLabel="Email input"
                 accessibilityHint="Enter your email"
               />
-
               <TextInput
                 style={GlobalStyles.input.field}
                 placeholder="Password"
@@ -109,7 +101,6 @@ const LoginModal = ({ visible, onClose, navigation }) => {
                 accessibilityLabel="Password input"
                 accessibilityHint="Enter your password"
               />
-
               <TouchableOpacity
                 style={GlobalStyles.button.primary}
                 onPress={handleLogin}
@@ -118,7 +109,6 @@ const LoginModal = ({ visible, onClose, navigation }) => {
               >
                 <Text style={GlobalStyles.button.text}>Login</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={onClose}
                 accessibilityLabel="Close button"

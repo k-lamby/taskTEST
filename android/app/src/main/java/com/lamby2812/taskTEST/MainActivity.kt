@@ -1,4 +1,4 @@
-package com.tasktest
+package com.lamby2812.taskTEST
 
 import android.os.Build
 import android.os.Bundle

@@ -1,5 +1,6 @@
 //================== ActivityInfoModal.js ===========================//
-// Reusable modal component to show activity information.
+// Reusable modal component to show activity information. This 
+// opens up and displays messages and status changes.
 //===================================================================//
 
 import React from "react";
@@ -8,19 +9,13 @@ import {
   View,
   Text,
   Pressable,
-  StyleSheet,
   TouchableWithoutFeedback,
-  AccessibilityInfo,
 } from "react-native";
+
 import GlobalStyles from "../../styles/styles";
 
-/**
- * ActivityInfoModal
- * Props:
- * - visible: Boolean to show/hide modal
- * - onClose: Function to close modal
- * - activity: Object with { content, timestamp, type }
- */
+// Straight forward modal that just displays information about 
+// the modal
 const ActivityInfoModal = ({ visible, onClose, activity }) => {
   if (!activity) return null;
 
@@ -33,34 +28,48 @@ const ActivityInfoModal = ({ visible, onClose, activity }) => {
       accessible={true}
       accessibilityViewIsModal={true}
     >
+      {/* tap outside the modal to close it */}
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.modalOverlay}>
+        <View style={GlobalStyles.modal.overlay}>
+          {/* prevent touch events dismissing modal area */}
           <TouchableWithoutFeedback>
-            <View style={styles.modalContainer}>
-              <Text style={GlobalStyles.sectionTitle}>Activity Info</Text>
+            <View style={GlobalStyles.modal.container}>
+              <View style={GlobalStyles.modal.content}>
+                {/* title */}
+                <Text
+                  style={GlobalStyles.text.headerMd}
+                  accessibilityRole="header"
+                  accessibilityLabel="Activity information"
+                >
+                  Activity Info
+                </Text>
 
-              <Text
-                style={[GlobalStyles.normalText, { marginTop: 10 }]}
-                accessibilityLabel={`Activity content: ${activity.content}`}
-              >
-                {activity.content}
-              </Text>
+                {/* activity content here */}
+                <Text
+                  style={[GlobalStyles.text.white, { marginTop: 10 }]}
+                  accessibilityLabel={`Activity content: ${activity.content}`}
+                >
+                  {activity.content}
+                </Text>
 
-              <Text
-                style={styles.timestampText}
-                accessibilityLabel={`Activity date: ${activity.timestamp?.toDate?.().toLocaleString()}`}
-              >
-                {activity.timestamp?.toDate?.().toLocaleString()}
-              </Text>
+                {/* add in the timestamp */}
+                <Text
+                  style={[GlobalStyles.text.translucentSmall, { marginTop: 8 }]}
+                  accessibilityLabel={`Activity date: ${activity.timestamp?.toDate?.().toLocaleString()}`}
+                >
+                  {activity.timestamp?.toDate?.().toLocaleString()}
+                </Text>
 
-              <Pressable
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel="Close activity information modal"
-                style={styles.closeButton}
-              >
-                <Text style={GlobalStyles.seeMoreText}>Close</Text>
-              </Pressable>
+                {/* close button only to dismiss the modal */}
+                <Pressable
+                  onPress={onClose}
+                  style={[GlobalStyles.button.small, GlobalStyles.layout.seeMore]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close activity information modal"
+                >
+                  <Text style={GlobalStyles.text.closeButton}>Close</Text>
+                </Pressable>
+              </View>
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -70,30 +79,3 @@ const ActivityInfoModal = ({ visible, onClose, activity }) => {
 };
 
 export default ActivityInfoModal;
-
-// ================== Local Styles ================== //
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  modalContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    width: "100%",
-    maxWidth: 400,
-  },
-  timestampText: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 10,
-  },
-  closeButton: {
-    marginTop: 20,
-    alignSelf: "flex-end",
-  },
-});

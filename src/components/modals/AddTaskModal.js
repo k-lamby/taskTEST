@@ -1,3 +1,7 @@
+//================== AddTaskModal.js ===========================//
+// Modal for adding a task, slides up from the bottom and looks
+// similar to the create project modal
+//==============================================================//
 import React, { useState } from "react";
 import {
   View,
@@ -15,25 +19,31 @@ import GlobalStyles from "../../styles/styles";
 import { useUser } from "../../contexts/UserContext";
 import { addTask } from "../../services/taskService";
 
+// modal allows you to set a name, description, due date, assign it to a user
+// and set the priority flag
 const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }) => {
+  // user context, used for assigning the task initially
   const { userId, firstName } = useUser();
-
+  // various states for storing for the form details
   const [taskName, setTaskName] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [dueDate, setDueDate] = useState(new Date());
   const [priority, setPriority] = useState("medium");
   const [assignedUser, setAssignedUser] = useState({ id: userId, name: firstName });
-
+  // states for setting whether the modals are visible or not
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showUserPicker, setShowUserPicker] = useState(false);
 
+  // function for handling adding a task
   const handleAddTask = async () => {
+    // check to make sure a task name is set
+    // other required data is forced by the form
     if (!taskName.trim()) {
-      alert("Task name is required!");
+      Alert.alert("Task name is required!");
       return;
     }
-
     try {
+      // then call add task from the taskService
       await addTask({
         name: taskName,
         description: taskDescription,
@@ -43,18 +53,18 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
         status: "pending",
         priority,
       });
-
-      // Reset fields
+      // reset the fields back to empty
       setTaskName("");
       setTaskDescription("");
       setDueDate(new Date());
       setAssignedUser({ id: userId, name: firstName });
       setPriority("medium");
-
+      // callback on task added, to trigger refresh of the page
       onTaskAdded();
       onClose();
     } catch (error) {
-      alert("Failed to add task. Please try again.");
+      // basic error handling for now
+      Alert.alert("Failed to add task. Please try again.");
       console.error("Add Task Error:", error);
     }
   };
@@ -64,15 +74,14 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={GlobalStyles.modal.bottomOverlay}>
           <View style={GlobalStyles.modal.bottomContainer}>
-            {/* 📝 Header */}
+            {/* Header including accessibility labels */}
             <Text
               style={[GlobalStyles.text.headerMd, { marginBottom: 20 }]}
-              accessibilityLabel="Add Task Modal Header"
-            >
+              accessibilityLabel="Add Task Modal Header">
               Add Task
             </Text>
 
-            {/* 🏷️ Task Name */}
+            {/* Form inputs for the user to enter the details */}
             <TextInput
               style={GlobalStyles.input.field}
               placeholder="Task Name"
@@ -81,8 +90,6 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
               onChangeText={setTaskName}
               accessibilityLabel="Task name input"
             />
-
-            {/* 📝 Task Description */}
             <TextInput
               style={[GlobalStyles.input.field, GlobalStyles.input.multiline, { height: 100 }]}
               placeholder="Task Description"
@@ -94,7 +101,7 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
               accessibilityLabel="Task description input"
             />
 
-            {/* 📅 Due Date */}
+            {/* Due Date, clicking on it will display the datepicker */}
             <Text style={[GlobalStyles.text.white, GlobalStyles.input.label]}>
               Due Date
             </Text>
@@ -108,7 +115,7 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
               </Text>
             </Pressable>
 
-            {/* 👤 Assigned User */}
+            {/* Assigned user clicking open the user picker modal*/}
             <Text style={[GlobalStyles.text.white, GlobalStyles.input.label]}>
               Assign To
             </Text>
@@ -122,7 +129,8 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
               </Text>
             </Pressable>
 
-            {/* 🚦 Priority Buttons */}
+            {/* logic to handle the priority buttons small inline js 
+            to pick the colour and whether or not the button is active */}
             <Text style={[GlobalStyles.text.white, GlobalStyles.input.label]}>
               Priority
             </Text>
@@ -149,7 +157,7 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
               })}
             </View>
 
-            {/* ✅ Add Task Button */}
+            {/* add Task Button */}
             <Pressable
               onPress={handleAddTask}
               style={GlobalStyles.button.primary}
@@ -158,7 +166,7 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
               <Text style={GlobalStyles.button.text}>Add Task</Text>
             </Pressable>
 
-            {/* ❌ Close Modal */}
+            {/* close modal, consistent with app styles */}
             <Pressable onPress={onClose} accessibilityLabel="Close add task modal">
               <Text style={GlobalStyles.text.closeButton}>Close</Text>
             </Pressable>
@@ -166,7 +174,7 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
         </View>
       </TouchableWithoutFeedback>
 
-      {/* 📅 Date Picker Modal */}
+      {/* date picker modal */}
       <CustomDatePicker
         visible={showDatePicker}
         onClose={() => setShowDatePicker(false)}
@@ -174,7 +182,8 @@ const AddTaskModal = ({ visible, onClose, onTaskAdded, projectId, projectUsers }
         title="Select Due Date"
       />
 
-      {/* 👤 User Picker Modal */}
+      {/* user picker modal, passing it the project users
+      for selection from */}
       <UserPickerModal
         visible={showUserPicker}
         onClose={() => setShowUserPicker(false)}

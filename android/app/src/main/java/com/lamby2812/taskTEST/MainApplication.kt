@@ -1,4 +1,4 @@
-package com.tasktest
+package com.lamby2812.taskTEST
 
 import android.app.Application
 import android.content.res.Configuration

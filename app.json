@@ -7,7 +7,7 @@
       "android"
     ],
     "newArchEnabled": true,
-    "version": "3.0.0",
+    "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "splash": {
@@ -26,13 +26,24 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lamby2812.taskTEST",
       "icon": "./assets/icon-1024.png",
-      "buildNumber": "4"
+      "buildNumber": "5",
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "This identifier will be used to send you notifications.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "NOTIFICATIONS",
+        "NOTIFICATIONS"
+      ],
+      "package": "com.lamby2812.taskTEST"
     },
     "extra": {
       "eas": {
@@ -41,7 +52,8 @@
     },
     "runtimeVersion": "1.0.0",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-notifications"
     ]
   }
 }

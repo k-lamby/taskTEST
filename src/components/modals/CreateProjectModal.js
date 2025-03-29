@@ -1,22 +1,19 @@
 //================== CreateProjectModal.js ===========================//
-// Self-contained modal component for creating new projects.
-// Combines modal rendering, form inputs, and Firebase integration.
-//====================================================================//
-
+// Slides up from the bottom, allows the user to create a project 
+// and add users to it
+//===================================================================//
 import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
-  Dimensions,
   Pressable,
   Alert,
 } from "react-native";
-import Icon from "react-native-vector-icons/Feather";
+import { UserPlus, X } from "lucide-react-native";
 
 import AddUserModal from "./AddUserModal";
 import CustomDatePicker from "./CustomDatePicker";
@@ -25,38 +22,27 @@ import { useUser } from "../../contexts/UserContext";
 
 import GlobalStyles from "../../styles/styles";
 
-const { height, width } = Dimensions.get("window");
-
-/**
- * @component CreateProjectModal
- * @param {boolean} visible - Controls modal visibility.
- * @param {function} onClose - Function to close the modal.
- * @param {function} onProjectCreated - Callback after project is created.
- */
+// create project modal, has a call back that is used to refresh
+// the project details on the main screen
 const CreateProjectModal = ({ visible, onClose, onProjectCreated }) => {
   const { createProject } = useProjectService();
   const { userId } = useUser();
-
-  // Form state
+  // states for handling the form inputs
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [dueDate, setDueDate] = useState(new Date());
   const [addedUsers, setAddedUsers] = useState([]);
-
-  // Modal state
+  // states for handling the visibility of the modals
   const [showUserModal, setShowUserModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  /**
-   * Handles the creation of a new project and calls the callback.
-   */
+  // check to make sure a project name is passed
   const handleCreateProject = async () => {
     if (!projectName.trim()) {
       Alert.alert("Error", "Project name is required.");
       return;
     }
-
     try {
+      // create the project object for upload to the database
       const projectData = {
         name: projectName.trim(),
         description: projectDescription.trim(),
@@ -65,150 +51,129 @@ const CreateProjectModal = ({ visible, onClose, onProjectCreated }) => {
         sharedWith: addedUsers,
       };
 
+      // then create the project
       await createProject(projectData);
-
-      if (typeof onProjectCreated === "function") {
-        await onProjectCreated(); // Refresh parent screen
-      }
-
+      // pass the callback using optional chaining
+      onProjectCreated?.();
       resetFormFields();
-      onClose(); // Close modal
+      onClose();
     } catch (error) {
-      console.error("Error creating project:", error);
+      // display the error if the project cannot be created
       Alert.alert("Error", "Could not create project. Please try again.");
     }
   };
-
-  /**
-   * Resets form fields after submission.
-   */
+  // then reset the form fields so when it is reopened the data doesnt
+  // persist.
   const resetFormFields = () => {
     setProjectName("");
     setProjectDescription("");
     setDueDate(new Date());
     setAddedUsers([]);
   };
-
-  /**
-   * Removes a user from the sharedWith list.
-   * @param {number} index - Index of user to remove
-   */
+  // function to handle remove users as they are added
   const handleRemoveUser = (index) => {
+    // set the state using a function that filters the previous state
+    // to remove the user at that index
     setAddedUsers((prevUsers) => prevUsers.filter((_, i) => i !== index));
   };
 
   return (
-    <Modal transparent={true} visible={visible} animationType="slide">
+    <Modal transparent visible={visible} animationType="slide">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <Text style={[GlobalStyles.headerText, styles.modalHeader]}>
-              Create New Project
-            </Text>
+        <View style={GlobalStyles.modal.bottomOverlay}>
+          <View style={GlobalStyles.modal.bottomContainer}>
+            <Text style={GlobalStyles.text.headerLg}>Create New Project</Text>
 
-            {/* Project Name */}
-            <TextInput
-              style={[GlobalStyles.inputContainer, GlobalStyles.normalTextBlack]}
-              placeholder="Project Name"
-              placeholderTextColor="black"
-              value={projectName}
-              onChangeText={setProjectName}
-              accessibilityLabel="Project name input"
-              accessible={true}
-            />
-
-            {/* Project Description */}
-            <TextInput
-              style={[
-                GlobalStyles.inputContainer,
-                GlobalStyles.normalTextBlack,
-                styles.descriptionInput,
-              ]}
-              placeholder="Project Description"
-              placeholderTextColor="black"
-              value={projectDescription}
-              onChangeText={setProjectDescription}
-              multiline={true}
-              numberOfLines={6}
-              accessibilityLabel="Project description input"
-              accessible={true}
-            />
-
-            {/* Due Date */}
-            <View style={styles.dueDateContainer}>
-              <Text style={[GlobalStyles.normalText, styles.dueDateLabel]}>
+            {/* Form inputs */}
+              <TextInput
+                style={GlobalStyles.input.field}
+                placeholder="Project Name"
+                placeholderTextColor="#000"
+                value={projectName}
+                onChangeText={setProjectName}
+                accessibilityLabel="Enter project name"
+              />
+              <TextInput
+                style={[GlobalStyles.input.field, GlobalStyles.input.multiline]}
+                placeholder="Project Description"
+                placeholderTextColor="#000"
+                value={projectDescription}
+                onChangeText={setProjectDescription}
+                multiline
+                numberOfLines={5}
+                accessibilityLabel="Enter project description"
+              />
+              <Text style={[GlobalStyles.text.white, GlobalStyles.input.label]}>
                 Due Date
               </Text>
               <Pressable
-                style={[GlobalStyles.inputContainer, styles.dateContainer]}
                 onPress={() => setShowDatePicker(true)}
+                style={GlobalStyles.input.field}
                 accessibilityLabel="Select due date"
-                accessible={true}
               >
-                <Text style={GlobalStyles.normalTextBlack}>
+                <Text style={GlobalStyles.text.black}>
                   {`${dueDate.getDate()}/${dueDate.getMonth() + 1}/${dueDate.getFullYear()}`}
                 </Text>
               </Pressable>
-            </View>
-
-            {/* Add Users */}
-            <View style={styles.addedUsersContainer}>
-              <Text style={GlobalStyles.subheaderText}>Added Users:</Text>
+            <View style={[GlobalStyles.utility.clickableRow, { justifyContent: "space-between" }]}>
+              <Text style={GlobalStyles.text.white}>Added Users</Text>
               <Pressable
                 onPress={() => setShowUserModal(true)}
-                style={styles.addUserIconContainer}
+                style={GlobalStyles.button.small}
                 accessibilityLabel="Add user to project"
-                accessible={true}
               >
-                <Icon name="user-plus" size={20} color="#fff" />
+                <UserPlus color="#fff" size={20} />
               </Pressable>
             </View>
-
-            {/* User List */}
-            <View style={styles.userList}>
+            {/* this shows the users being added to the project as the user
+            adds them. Shows a small cross which allows the user to remove them as well */}
+            <View style={{ width: "100%", marginTop: 5 }}>
               {addedUsers.length > 0 ? (
                 addedUsers.map((user, index) => (
-                  <View key={index} style={styles.userRow}>
-                    <Text style={GlobalStyles.normalText}>{user}</Text>
+                  <View
+                    key={index}
+                    style={[
+                      GlobalStyles.utility.clickableRow,
+                      { justifyContent: "space-between" },
+                    ]}
+                  >
+                    <Text style={GlobalStyles.text.white}>{user}</Text>
                     <Pressable
                       onPress={() => handleRemoveUser(index)}
                       accessibilityLabel={`Remove user ${user}`}
-                      accessible={true}
                     >
-                      <Icon name="x" size={20} color="#FFA500" />
+                      <X size={20} color="#FFA500" />
                     </Pressable>
                   </View>
                 ))
               ) : (
-                <Text style={GlobalStyles.translucentText}>No users added yet.</Text>
+                <Text style={GlobalStyles.text.translucent}>
+                  No users added yet.
+                </Text>
               )}
             </View>
-
-            {/* Create Button */}
             <Pressable
-              style={[GlobalStyles.primaryButton, styles.createButton]}
+              style={GlobalStyles.button.primary}
               onPress={handleCreateProject}
               accessibilityLabel="Create project"
-              accessible={true}
             >
-              <Text style={GlobalStyles.primaryButtonText}>Create</Text>
+              <Text style={GlobalStyles.button.text}>Create</Text>
             </Pressable>
-
-            {/* Close Button */}
             <Pressable onPress={onClose}>
-              <Text style={styles.closeButton}>Close</Text>
+              <Text style={GlobalStyles.text.closeButton}>Close</Text>
             </Pressable>
           </View>
         </View>
       </TouchableWithoutFeedback>
-
-      {/* Custom Modals */}
+      {/* add user modal, for adding new users by their email*/}
       <AddUserModal
         visible={showUserModal}
         onClose={() => setShowUserModal(false)}
-        onUserAdded={(newUser) => setAddedUsers((prevUsers) => [...prevUsers, newUser])}
+        onUserAdded={(newUser) =>
+          setAddedUsers((prevUsers) => [...prevUsers, newUser])
+        }
       />
-
+      {/* custom date picker modal */}
       <CustomDatePicker
         visible={showDatePicker}
         onClose={() => setShowDatePicker(false)}
@@ -218,74 +183,5 @@ const CreateProjectModal = ({ visible, onClose, onProjectCreated }) => {
     </Modal>
   );
 };
-
-//================== Styles ===========================//
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContainer: {
-    height: height * 0.8,
-    width: width * 0.9,
-    backgroundColor: "#15616D",
-    borderTopLeftRadius: 100,
-    borderTopRightRadius: 100,
-    padding: 20,
-    position: "absolute",
-    bottom: 0,
-    left: "5%",
-    alignItems: "center",
-  },
-  modalHeader: {
-    marginBottom: 20,
-    marginTop: 20,
-    textAlign: "center",
-  },
-  descriptionInput: {
-    height: 120,
-    textAlignVertical: "top",
-  },
-  dueDateContainer: {
-    width: "100%",
-    marginTop: 10,
-  },
-  dueDateLabel: {
-    paddingLeft: 3,
-  },
-  dateContainer: {
-    justifyContent: "center",
-  },
-  addedUsersContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginTop: 10,
-  },
-  addUserIconContainer: {
-    alignItems: "center",
-  },
-  userList: {
-    width: "100%",
-    marginTop: 5,
-  },
-  userRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  createButton: {
-    marginTop: 20,
-  },
-  closeButton: {
-    marginTop: 10,
-    color: "#FFFFFF",
-    textDecorationLine: "underline",
-    textAlign: "center",
-  },
-});
 
 export default CreateProjectModal;

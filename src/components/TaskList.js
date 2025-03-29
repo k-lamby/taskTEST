@@ -1,8 +1,7 @@
-//=======================================================//
-// TaskList.js
-// Reusable component to display a list of tasks
-// across one or many projects.
-// Integrates GlobalStyles for consistency and accessibility.
+//======================TaskList.js==========================//
+// reusable as the actions associated are the same where this
+// is reused around the application. Displays a list of tasks
+// opents the task detail modal where the user can upload info
 //=======================================================//
 
 import React, { useState } from "react";
@@ -19,6 +18,7 @@ import GlobalStyles from "../styles/styles";
 import { formatDateFirestoreJs } from "../utils/dateUtils";
 import TaskDetailModal from "./modals/TaskDetailModal";
 
+// pass various props for controlling the appearance
 const TaskList = ({
   tasks = [],
   navigation,
@@ -32,6 +32,8 @@ const TaskList = ({
   const [selectedTask, setSelectedTask] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // set the selected task for whenever one is picked
+  // this allows as to identify which task we are working on
   const openTaskModal = (task) => {
     setSelectedTask(task);
     setModalVisible(true);
@@ -42,6 +44,8 @@ const TaskList = ({
     setSelectedTask(null);
   };
 
+  // map the priority type to the style
+  // so we can plot the css appearance
   const getPriorityStyle = (priority) => {
     switch (priority) {
       case "high":
@@ -57,13 +61,11 @@ const TaskList = ({
 
   return (
     <View style={GlobalStyles.layout.container}>
-      {/* 🔠 Section Header */}
       <View style={GlobalStyles.layout.header}>
         <Text style={GlobalStyles.layout.title}>{title}</Text>
         {rightAction}
       </View>
-
-      {/* 📋 Task List or Empty State */}
+      {/* handle if there are no tasks */}
       {tasks.length === 0 ? (
         <Text style={GlobalStyles.text.translucent}>No tasks found.</Text>
       ) : (
@@ -73,17 +75,15 @@ const TaskList = ({
           renderItem={({ item }) => {
             const isCompleted = item.status === "completed";
             const TaskIcon = isCompleted ? CheckCircle : Circle;
-
             return (
               <View style={GlobalStyles.layout.listItem}>
-                {/* 🏳️ Priority Flag */}
+                {/* little priority bar to indicate the level of importance */}
                 <View
                   style={[styles.priorityFlag, getPriorityStyle(item.priority)]}
                   accessibilityLabel={`Priority: ${item.priority}`}
                   accessible
                 />
-
-                {/* ✅ Status Checkbox */}
+                {/* handles toggling the task complete or pending */}
                 <TouchableOpacity
                   onPress={() => onToggleTaskStatus(item.id, item.status)}
                   accessibilityLabel={`Mark task "${item.name}" as ${isCompleted ? "pending" : "completed"}`}
@@ -94,8 +94,6 @@ const TaskList = ({
                     size={18}
                   />
                 </TouchableOpacity>
-
-                {/* 🔤 Task Title */}
                 <TouchableOpacity
                   onPress={() => openTaskModal(item)}
                   style={styles.taskTitleWrapper}
@@ -111,8 +109,6 @@ const TaskList = ({
                     {item.name}
                   </Text>
                 </TouchableOpacity>
-
-                {/* 🗓 Due Date */}
                 <Text
                   style={GlobalStyles.text.translucentSmall}
                   accessibilityLabel={`Due date: ${formatDateFirestoreJs(item.dueDate)}`}
@@ -124,8 +120,6 @@ const TaskList = ({
           }}
         />
       )}
-
-      {/* 🔗 See More CTA */}
       {showSeeMore && (
         <TouchableOpacity
           style={GlobalStyles.layout.seeMore}
@@ -135,8 +129,6 @@ const TaskList = ({
           <Text style={GlobalStyles.text.highlight}>See More →</Text>
         </TouchableOpacity>
       )}
-
-      {/* 🪟 Task Detail Modal */}
       {selectedTask && (
         <TaskDetailModal
           task={selectedTask}
@@ -154,9 +146,10 @@ const TaskList = ({
   );
 };
 
+//======== Page Specific Styles ========//
 const styles = StyleSheet.create({
   checkboxWrapper: {
-    padding: 3, // Ensures touchable area is large enough
+    padding: 3, 
   },
   taskTitleWrapper: {
     flex: 1,

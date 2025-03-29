@@ -1,3 +1,7 @@
+//================== User Picker Modal.js =======================//
+// this takes a list of user ids and users, and displays a list
+// that allows the user to select from.
+//==============================================================//
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -11,17 +15,18 @@ import GlobalStyles from "../../styles/styles";
 import { useUser } from "../../contexts/UserContext";
 
 const UserPickerModal = ({ visible, onClose, onUserSelected, projectUsers }) => {
+  // states for handling the current user details, and the form information
   const { userId, firstName } = useUser();
   const [selectedUser, setSelectedUser] = useState(null);
   const [userList, setUserList] = useState([]);
 
   useEffect(() => {
+    // make sure the user array is sorted to have the current user always on top
     if (Array.isArray(projectUsers)) {
       const sortedUsers = [
         { id: userId, name: firstName || "You" },
         ...projectUsers.filter(user => user.id !== userId),
       ];
-
       setUserList(sortedUsers);
       setSelectedUser(sortedUsers[0]);
     }
@@ -33,7 +38,6 @@ const UserPickerModal = ({ visible, onClose, onUserSelected, projectUsers }) => 
     <Modal visible={visible} animationType="slide" transparent>
       <View style={GlobalStyles.modal.overlay}>
         <View style={GlobalStyles.modal.container}>
-          {/* 🧑 Header */}
           <Text
             style={[GlobalStyles.text.headerLg, { marginBottom: 16 }]}
             accessibilityRole="header"
@@ -42,12 +46,13 @@ const UserPickerModal = ({ visible, onClose, onUserSelected, projectUsers }) => 
             Select User
           </Text>
 
-          {/* 👤 Scrollable User List */}
+          {/* scrollable list of users to select */}
           <ScrollView
             style={{ width: "100%" }}
             contentContainerStyle={{ paddingBottom: 10 }}
             showsVerticalScrollIndicator={false}
           >
+            {/* plot each user component */}
             {userList.map((user) => {
               const isSelected = selectedUser?.id === user.id;
               return (
@@ -81,7 +86,6 @@ const UserPickerModal = ({ visible, onClose, onUserSelected, projectUsers }) => 
             })}
           </ScrollView>
 
-          {/* ✅ Confirm Selection */}
           <TouchableOpacity
             onPress={() => {
               if (selectedUser) onUserSelected(selectedUser);
@@ -92,8 +96,7 @@ const UserPickerModal = ({ visible, onClose, onUserSelected, projectUsers }) => 
           >
             <Text style={GlobalStyles.button.text}>Select</Text>
           </TouchableOpacity>
-
-          {/* ❌ Cancel Button */}
+          
           <TouchableOpacity
             onPress={onClose}
             accessibilityLabel="Cancel and close user picker"

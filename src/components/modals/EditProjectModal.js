@@ -1,7 +1,7 @@
-//================== EditProjectModal.js ===========================//
-// Modal to edit an existing project's name and description.
-// Uses GlobalStyles for consistent styling and accessibility.
-//==================================================================//
+//================== EditProjectModal.js =======================//
+// straight forward modal that allows the user to edit the name
+// and description of an existing project.
+//==============================================================//
 
 import React, { useState, useEffect } from "react";
 import {
@@ -19,13 +19,14 @@ import { useProjectService } from "../../services/projectService";
 import GlobalStyles from "../../styles/styles";
 
 const EditProjectModal = ({ visible, onClose, project }) => {
+  // states for storing the form entries
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  
   const { updateProject } = useProjectService();
 
-  // Populate fields when modal opens
+  // when the modal opens, prefill the fields of the form
+  // with the current data
   useEffect(() => {
     if (project) {
       setProjectName(project.name);
@@ -33,25 +34,24 @@ const EditProjectModal = ({ visible, onClose, project }) => {
     }
   }, [project, visible]);
 
+  //function for handling updating the project
   const handleUpdateProject = async () => {
+    // check to make sure a project name is given
     if (!projectName.trim()) {
       Alert.alert("Validation Error", "Project name cannot be empty.");
       return;
     }
-
-    setLoading(true);
     try {
+      // then wait for the update of the project
       await updateProject(project.id, {
         name: projectName.trim(),
         description: projectDescription.trim(),
       });
+      // on update close the modal
       onClose();
     } catch (error) {
-      console.error("❌ Error updating project:", error);
       Alert.alert("Update Failed", "Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   return (
@@ -59,12 +59,10 @@ const EditProjectModal = ({ visible, onClose, project }) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={GlobalStyles.modal.overlay}>
           <View style={GlobalStyles.modal.container}>
-            {/* 📝 Modal Title */}
             <Text style={[GlobalStyles.text.headerMd, styles.modalHeader]}>
               Edit Project
             </Text>
-
-            {/* 🧾 Project Name Input */}
+            {/* form inputs */}
             <TextInput
               style={GlobalStyles.input.field}
               placeholder="Project Name"
@@ -74,8 +72,6 @@ const EditProjectModal = ({ visible, onClose, project }) => {
               accessibilityLabel="Project Name Input"
               autoFocus
             />
-
-            {/* 🧾 Project Description Input */}
             <TextInput
               style={[GlobalStyles.input.field, GlobalStyles.input.multiline]}
               placeholder="Project Description"
@@ -86,20 +82,12 @@ const EditProjectModal = ({ visible, onClose, project }) => {
               numberOfLines={4}
               accessibilityLabel="Project Description Input"
             />
-
-            {/* ✅ Update Button */}
             <TouchableOpacity
               style={GlobalStyles.button.primary}
               onPress={handleUpdateProject}
-              disabled={loading}
               accessibilityLabel="Update Project Button"
             >
-              <Text style={GlobalStyles.button.text}>
-                {loading ? "Updating..." : "Update Project"}
-              </Text>
             </TouchableOpacity>
-
-            {/* ❌ Cancel Button */}
             <TouchableOpacity
               onPress={onClose}
               accessibilityLabel="Cancel Edit Button"

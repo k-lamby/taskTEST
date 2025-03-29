@@ -1,3 +1,8 @@
+//================== TaskDetailModal.js =======================//
+// task detail modal, handles alot of functionality. Allows the
+// user to change who the task is assigned to, its due date. As 
+// well as adding 
+//==============================================================//
 import React, { useState } from "react";
 import {
   View,
@@ -25,6 +30,7 @@ import UserPickerModal from "./UserPickerModal";
 import { addActivity } from "../../services/activityService";
 import { uploadFile } from "../../services/storageService";
 
+// various props sent to it, including a callback when the task is updated
 const TaskDetailModal = ({
   task,
   visible,
@@ -32,27 +38,33 @@ const TaskDetailModal = ({
   onUpdateTask,
   projectUsers,
 }) => {
+  // get the user context
   const { userId } = useUser();
-
+  //states for storing changes made to the existing task info
   const [assignedTo, setAssignedTo] = useState(task.owner);
   const [dueDate, setDueDate] = useState(new Date(task.dueDate));
   const [priority, setPriority] = useState(task.priority || "medium");
-
+  // states for showing the modal
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showUserPicker, setShowUserPicker] = useState(false);
+  // uploading takes a bit of time so we want to set a loading state
   const [uploading, setUploading] = useState(false);
+  // grab the selected file details and or message
   const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState("");
+  //state to control whether the message box is visible or not.
   const [showMessageInput, setShowMessageInput] = useState(false);
-
+  // get the current assigned user, and their user name
   const assignedUser = projectUsers.find((user) => user.id === assignedTo);
   const assignedUserName = assignedUser ? assignedUser.name : "Unassigned";
-
+  // function to handle uploading the file
   const handleFileUpload = async () => {
     try {
+      // use the document picker to access the users files and grab the document
       const result = await DocumentPicker.getDocumentAsync({ type: "*/*" });
+      // if its cancelled, then dont do anything
       if (result.canceled) return;
-
+      // otherwise grab the file, and add the name add the uri to the state
       const file = result.assets[0];
       setSelectedFile({
         name: file.name,
@@ -60,15 +72,15 @@ const TaskDetailModal = ({
         type: file.mimeType,
       });
     } catch (error) {
-      console.error("Error selecting file:", error);
+      Alert.alert("Error selecting file:", error);
     }
   };
-
+  // similar structure for handling the image upload, but filter by the type image
+  // we should amend this in a future iteration to use the camera/photo section in ios
   const handleImageUpload = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: "image/*" });
       if (result.canceled) return;
-
       const file = result.assets[0];
       setSelectedFile({
         name: file.name,
@@ -80,29 +92,33 @@ const TaskDetailModal = ({
     }
   };
 
+  // then handle confirming the upload
   const handleConfirmUpload = async () => {
+    // check to see what information has changed
     const unchanged =
       assignedTo === task.owner &&
       dueDate.toDateString() === new Date(task.dueDate).toDateString() &&
       priority === task.priority &&
       !selectedFile &&
       !message.trim();
-
+    // if nothing has changed then just cancel and return a message
     if (unchanged) {
       Alert.alert("No changes made", "Please make at least one change.");
       return;
     }
-
+    // otherwise set uploading to true
     setUploading(true);
 
     try {
-      // 📎 Upload file activity
+      // and then start actually uploading the data to the database
       if (selectedFile) {
         const timestamp = Date.now();
         const safeFilename = selectedFile.name.replace(/\s+/g, "_").toLowerCase();
+        // build the storage path
         const storagePath = `tasks/${task.id}/attachments/${timestamp}_${safeFilename}`;
+        // and then upload the file
         const downloadURL = await uploadFile(selectedFile.uri, storagePath);
-
+        // we then want to add an activity to firestore, so the user can access the file
         await addActivity({
           projectId: task.projectId,
           taskId: task.id,
@@ -112,8 +128,7 @@ const TaskDetailModal = ({
           fileUrl: downloadURL,
         });
       }
-
-      // 💬 Submit message activity
+      // if there is a message, we want to add that to the activity to
       if (message.trim()) {
         await addActivity({
           projectId: task.projectId,
@@ -123,13 +138,11 @@ const TaskDetailModal = ({
           content: message.trim(),
         });
       }
-
-      // 🛠️ Update task details
+      // if any other information has changed, then we update that information too
       const hasTaskChanged =
         assignedTo !== task.owner ||
         dueDate.toDateString() !== new Date(task.dueDate).toDateString() ||
         priority !== task.priority;
-
       if (hasTaskChanged) {
         onUpdateTask?.({
           id: task.id,
@@ -140,15 +153,16 @@ const TaskDetailModal = ({
           },
         });
       }
-
+      // clear the form fields
       setSelectedFile(null);
       setMessage("");
       setShowMessageInput(false);
+      // and then close the modal
       onClose();
     } catch (error) {
       Alert.alert("Upload Failed", "An error occurred while uploading. Please try again.");
-      console.error("❌ Upload error:", error);
     } finally {
+      // then reset loading to false
       setUploading(false);
     }
   };
@@ -157,11 +171,10 @@ const TaskDetailModal = ({
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
       <View style={GlobalStyles.modal.overlay}>
         <View style={GlobalStyles.modal.container}>
-          {/* 🔠 Task Header */}
           <Text style={GlobalStyles.text.headerLg}>{task.name}</Text>
           <Text style={GlobalStyles.text.white}>{task.description}</Text>
 
-          {/* 👤 Assigned To */}
+          {/* Assigned to section, clickable to open the user picker modal */}
           <TouchableOpacity
             style={[GlobalStyles.utility.clickableRow, styles.centeredRow]}
             onPress={() => setShowUserPicker(true)}
@@ -173,7 +186,7 @@ const TaskDetailModal = ({
             </Text>
           </TouchableOpacity>
 
-          {/* 📅 Due Date */}
+          {/* Due date, clickable to open the custom date picker */}
           <TouchableOpacity
             style={[GlobalStyles.utility.clickableRow, styles.centeredRow]}
             onPress={() => setShowDatePicker(true)}
@@ -185,7 +198,7 @@ const TaskDetailModal = ({
             </Text>
           </TouchableOpacity>
 
-          {/* 🚦 Priority Selector */}
+          {/* Priority selector, with inline js for handling the styles of the icons */}
           <Text style={[GlobalStyles.text.white, GlobalStyles.input.label]}>
             Priority
           </Text>
@@ -211,7 +224,7 @@ const TaskDetailModal = ({
             })}
           </View>
 
-          {/* 📎 Upload Row */}
+          {/* upload icons, allows the user to select what action theyd like */}
           <View style={GlobalStyles.utility.uploadRow}>
             <TouchableOpacity
               onPress={handleFileUpload}
@@ -238,14 +251,14 @@ const TaskDetailModal = ({
             </TouchableOpacity>
           </View>
 
-          {/* 📝 Filename */}
+          {/* Display the file name to indicate to the user its keyed up and ready to go */}
           {selectedFile && (
             <Text style={[GlobalStyles.text.white, { marginTop: 8 }]}>
               Selected: {selectedFile.name}
             </Text>
           )}
 
-          {/* 💬 Message Input */}
+          {/* Message input box, hidden until you press the icon */}
           {showMessageInput && (
             <View style={GlobalStyles.input.container}>
               <TextInput
@@ -260,7 +273,7 @@ const TaskDetailModal = ({
             </View>
           )}
 
-          {/* ✅ Submit Button */}
+          {/* Submit button, shows the loading icon when loading is true */}
           <TouchableOpacity
             style={GlobalStyles.button.primary}
             onPress={handleConfirmUpload}
@@ -274,12 +287,11 @@ const TaskDetailModal = ({
             )}
           </TouchableOpacity>
 
-          {/* ❌ Close Button */}
           <TouchableOpacity onPress={onClose} accessibilityLabel="Close modal">
             <Text style={GlobalStyles.text.closeButton}>Close</Text>
           </TouchableOpacity>
 
-          {/* 📅 Date Picker */}
+          {/* custom date picker modal */}
           <CustomDatePicker
             visible={showDatePicker}
             onClose={() => setShowDatePicker(false)}
@@ -287,7 +299,7 @@ const TaskDetailModal = ({
             title="Select Due Date"
           />
 
-          {/* 👥 User Picker */}
+          {/* modal for selecting the user */}
           <UserPickerModal
             visible={showUserPicker}
             onClose={() => setShowUserPicker(false)}
@@ -302,7 +314,7 @@ const TaskDetailModal = ({
 
 export default TaskDetailModal;
 
-// ================== Local Styles ================== //
+// ===== Page specific styles ======= //
 const styles = StyleSheet.create({
   centeredRow: {
     justifyContent: "center",

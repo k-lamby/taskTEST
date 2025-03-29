@@ -1,7 +1,6 @@
-//============= AddUserModal.js =============//
-// Modal for adding a user to a project by email.
-// Uses centralized GlobalStyles for consistency.
-//===========================================//
+//================== AddUserModal.js ===========================//
+// Simple modal that allows for the input of a user email address
+//==============================================================//
 
 import React, { useState } from 'react';
 import {
@@ -19,15 +18,17 @@ import {
 import GlobalStyles from '../../styles/styles';
 
 const AddUserModal = ({ visible, onClose, onUserAdded }) => {
+  // state for getting the form information
   const [userEmail, setUserEmail] = useState('');
-
+  //check to make sure there is something being passed from the form
   const handleAddUser = () => {
     if (!userEmail.trim()) {
       Alert.alert('Invalid Input', 'Please enter a valid email address.');
       return;
     }
-
+    //callback passing the email
     onUserAdded(userEmail.trim());
+    // then reset the form state and close
     setUserEmail('');
     onClose();
   };
@@ -37,12 +38,11 @@ const AddUserModal = ({ visible, onClose, onUserAdded }) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={GlobalStyles.modal.overlay}>
           <View style={GlobalStyles.modal.container}>
-            {/* 🧑‍🤝‍🧑 Header */}
             <Text style={[GlobalStyles.text.headerMd, styles.headerSpacing]}>
               Add User
             </Text>
 
-            {/* 📧 Email Input */}
+            {/* Email input, use os shortcuts to bring up the email address keyboard etc */}
             <TextInput
               style={GlobalStyles.input.field}
               placeholder="Enter user email"
@@ -55,7 +55,6 @@ const AddUserModal = ({ visible, onClose, onUserAdded }) => {
               accessibilityLabel="Email address input"
             />
 
-            {/* 🔘 Action Buttons */}
             <View style={styles.buttonContainer}>
               <Pressable
                 style={GlobalStyles.button.primary}
@@ -81,7 +80,7 @@ const AddUserModal = ({ visible, onClose, onUserAdded }) => {
 
 export default AddUserModal;
 
-// ================= Local Styles ================= //
+// =======Page Specific Styles ========= //
 const styles = StyleSheet.create({
   headerSpacing: {
     marginBottom: 20,
