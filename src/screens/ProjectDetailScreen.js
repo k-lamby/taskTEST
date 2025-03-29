@@ -1,3 +1,8 @@
+//=================== ProjectDetailScreen.js =======================//
+// this displays all the information for one specific project
+// shows meta data at the top, then tasks and activities at the bottom
+// activity section can be filtered
+//================================================================//
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -44,10 +49,12 @@ import { useUser } from "../contexts/UserContext";
 import GlobalStyles from "../styles/styles";
 
 const ProjectDetailScreen = ({ navigation }) => {
+  // get the project id from the route params
   const route = useRoute();
   const { projectId } = route.params;
+  // get the current user from the usercontext
   const { userId } = useUser();
-
+  // states for storing information pulled from the database
   const [projectMeta, setProjectMeta] = useState({
     name: "",
     description: "",
@@ -56,17 +63,23 @@ const ProjectDetailScreen = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
   const [projectUsers, setProjectUsers] = useState([]);
-
+  // states for displaying loading icons
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  // states for displaying if a modal is visible or not
   const [addTaskModalVisible, setAddTaskModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [addUserModalVisible, setAddUserModalVisible] = useState(false);
 
   useEffect(() => {
+    // on load fetch all the data
+    // have fetch all data outside of the effect
+    // so it can be called whenever a change is made
+    // in the database
     fetchAllData();
   }, [projectId]);
 
+  // runs all the data collection functions
   const fetchAllData = async () => {
     await fetchProjectInfo();
     await fetchUsers();
@@ -76,6 +89,7 @@ const ProjectDetailScreen = ({ navigation }) => {
 
   const fetchProjectInfo = async () => {
     try {
+      // get the project info
       const data = await fetchProjectById(projectId);
       setProjectMeta({
         id: data.id,
@@ -84,27 +98,30 @@ const ProjectDetailScreen = ({ navigation }) => {
         ownerId: data.createdBy,
       });
     } catch (err) {
-      console.error("Failed to fetch project info:", err);
+      Alert.alert("Failed to fetch project info:", err);
     }
   };
-
+  // fetch the task information
   const fetchTasks = async () => {
     try {
       setLoadingTasks(true);
       const fetched = await fetchTasksByProjectId(projectId);
+      // sort the tasks by due date before storing
       fetched.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
       setTasks(fetched);
     } catch (err) {
-      console.error("Error fetching tasks:", err);
+      Alert.alert("Error fetching tasks:", err);
     } finally {
       setLoadingTasks(false);
     }
   };
 
+  // then grab the activities
   const fetchActivities = async () => {
     try {
       setLoadingActivities(true);
       const fetched = await fetchRecentActivities([projectId]);
+      // we want to map the task name to the activity to give it more context
       const enrichedActivities = fetched.map((activity) => {
         const task = tasks.find((t) => t.id === activity.taskId);
         const title = task ? task.name : "Unnamed Task";
@@ -115,12 +132,14 @@ const ProjectDetailScreen = ({ navigation }) => {
       });
       setActivities(enrichedActivities);
     } catch (err) {
-      console.error("Error fetching activities:", err);
+      Alert.alert("Error fetching activities:", err);
     } finally {
       setLoadingActivities(false);
     }
   };
-
+  // then grab the users, this is used for display names associated with
+  // activities
+  // but also changing assigned users on tasks
   const fetchUsers = async () => {
     try {
       const userIds = await fetchProjectUserIds(projectId);
@@ -135,12 +154,14 @@ const ProjectDetailScreen = ({ navigation }) => {
     }
   };
 
+  // this handles toggling a task between complete and pending
   const handleToggleTaskStatus = async (taskId, currentStatus) => {
     await toggleTaskCompletion(taskId, currentStatus);
     fetchTasks();
   };
-
+  // handle archiving a project (only accessible by project creator)
   const handleArchiveProject = () => {
+    // check to make sure the user confirms the action
     Alert.alert(
       "Archive Project",
       "Are you sure you want to archive this project? You can restore it later from settings.",
@@ -151,6 +172,8 @@ const ProjectDetailScreen = ({ navigation }) => {
           style: "destructive",
           onPress: async () => {
             try {
+              // then archive the project and push
+              // the user back to the previous page
               await archiveProject(projectId);
               Alert.alert("Project archived");
               navigation.goBack();
@@ -163,7 +186,9 @@ const ProjectDetailScreen = ({ navigation }) => {
     );
   };
 
+  // if the user didnt create the project, they can opt to leave it instead
   const handleLeaveProject = () => {
+    // make sure the user confirms the destructive action
     Alert.alert(
       "Leave Project",
       "Are you sure you want to leave this project? You will lose access.",
@@ -174,6 +199,8 @@ const ProjectDetailScreen = ({ navigation }) => {
           style: "destructive",
           onPress: async () => {
             try {
+              // then call leave project and push the user 
+              // back to the previous page
               await leaveProject(projectId, userId);
               Alert.alert("Left project successfully");
               navigation.goBack();
@@ -188,7 +215,6 @@ const ProjectDetailScreen = ({ navigation }) => {
 
   const renderHeader = () => (
     <View style={GlobalStyles.container.base}>
-      {/* 🔎 Project Overview */}
       <View style={GlobalStyles.layout.container}>
         <View style={GlobalStyles.layout.header}>
           <Text style={GlobalStyles.text.headerMd}>Project Overview</Text>
@@ -215,13 +241,9 @@ const ProjectDetailScreen = ({ navigation }) => {
             )}
           </View>
         </View>
-
-        {/* 📄 Description */}
         <Text style={[GlobalStyles.text.translucent, { marginTop: 8 }]}>
           {projectMeta.description || "No description provided."}
         </Text>
-
-        {/* 👥 Shared Users */}
         <View style={styles.sharedRow}>
           <View>
             <Text
@@ -259,8 +281,6 @@ const ProjectDetailScreen = ({ navigation }) => {
           </View>
         </View>
       </View>
-
-      {/* ✅ Tasks List */}
       {loadingTasks ? (
         <ActivityIndicator size="large" color="#ffffff" />
       ) : (
@@ -282,8 +302,6 @@ const ProjectDetailScreen = ({ navigation }) => {
           }
         />
       )}
-
-      {/* ✅ Activity Feed */}
       {loadingActivities ? (
         <ActivityIndicator size="large" color="#ffffff" />
       ) : (
@@ -310,8 +328,6 @@ const ProjectDetailScreen = ({ navigation }) => {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       />
-
-      {/* ✅ Add Task Modal */}
       <AddTaskModal
         visible={addTaskModalVisible}
         onClose={() => setAddTaskModalVisible(false)}
@@ -319,7 +335,6 @@ const ProjectDetailScreen = ({ navigation }) => {
         projectId={projectId}
         projectUsers={projectUsers}
       />
-
       <EditProjectModal
         visible={editModalVisible}
         project={{ ...projectMeta, id: projectId }}
@@ -328,19 +343,18 @@ const ProjectDetailScreen = ({ navigation }) => {
           fetchProjectInfo();
         }}
       />
-
       <AddUserModal
         visible={addUserModalVisible}
         onClose={() => setAddUserModalVisible(false)}
         onUserAdded={fetchUsers}
         projectId={projectId}
       />
-
       <BottomBar navigation={navigation} activeScreen="ProjectDetail" />
     </GradientBackground>
   );
 };
 
+//========= Page Specific Styles ========//
 const styles = StyleSheet.create({
   sharedRow: {
     flexDirection: "row",

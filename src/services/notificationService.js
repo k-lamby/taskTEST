@@ -1,7 +1,11 @@
+//================== notificationService.js =====================//
+// used for handling push notifications to other devices
+//https://docs.expo.dev/push-notifications/push-notifications-setup/
+//===============================================================//
 import { db } from "../config/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 
-// 🔔 Send push to all project users except sender
+// this sens a push notification to users on a specific project
 export const sendPushNotificationToProjectUsers = async ({
   projectId,
   senderId,
@@ -10,10 +14,11 @@ export const sendPushNotificationToProjectUsers = async ({
   data = {},
 }) => {
   try {
+    // first get the user group to notify
     const usersSnapshot = await getDocs(collection(db, `projects/${projectId}/users`));
 
+    // then grab the expo tokens for those users
     const tokensToNotify = [];
-
     for (const docSnap of usersSnapshot.docs) {
       const user = docSnap.data();
       const isSelf = user.id === senderId;
@@ -22,7 +27,7 @@ export const sendPushNotificationToProjectUsers = async ({
       }
     }
 
-    // 🚀 Send notification to each token
+    // Send notification to each token
     for (const token of tokensToNotify) {
       await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
@@ -41,6 +46,6 @@ export const sendPushNotificationToProjectUsers = async ({
       });
     }
   } catch (error) {
-    console.error("❌ Failed to send push notification:", error);
+    console.error("Failed to send push notification:", error);
   }
 };

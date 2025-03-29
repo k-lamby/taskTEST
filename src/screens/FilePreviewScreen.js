@@ -1,10 +1,6 @@
-//================== FilePreviewScreen.js ========================//
-// Displays a hybrid file preview screen with consistent branding.
-// - Images: in-app zoom
-// - PDFs: via WebView
-// - Other files: open in browser
-// - Includes SafeAreaView for full device compatibility
-//===============================================================//
+//=================== FilePreviewScreen.js =======================//
+// file preview for viewing and zooming in on images and pdfs
+//================================================================//
 
 import React from "react";
 import {
@@ -26,15 +22,15 @@ import GlobalStyles from "../styles/styles";
 const FilePreviewScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  // get the file details from the route params
   const { fileUrl, fileType, fileName = "Attachment" } = route.params;
 
-  // 🔎 Detect file types
+  // regex to get the image types, or pdf
   const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)(\?|$)/i.test(fileUrl);
   const isPdf = /\.pdf(\?|$)/i.test(fileUrl);
 
-  /**
-   * 🌐 Fallback for unsupported file types
-   */
+  // if the file type is unsupported we have a fallback to open
+  // the file in the browser
   const openInBrowser = async () => {
     const supported = await Linking.canOpenURL(fileUrl);
     if (supported) {
@@ -44,10 +40,11 @@ const FilePreviewScreen = () => {
     }
   };
 
+  // then returns the three different view types depending on the situation
+  // image, pdf or not support
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#001524" }}>
       <View style={[GlobalStyles.container.base, { flex: 1 }]}>
-        {/* 🔝 Branded Top Header */}
         <View style={GlobalStyles.nav.topBarContainer}>
           <Text
             style={[GlobalStyles.text.white, { flex: 1 }]}
@@ -66,11 +63,8 @@ const FilePreviewScreen = () => {
             <X size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-
-        {/* 📄 File Preview Area */}
         <View style={{ flex: 1 }}>
           {isImage ? (
-            // 🖼️ Image Preview
             <ScrollView
               maximumZoomScale={5}
               minimumZoomScale={1}
@@ -85,7 +79,6 @@ const FilePreviewScreen = () => {
               />
             </ScrollView>
           ) : isPdf ? (
-            // 📄 PDF Preview
             <WebView
               source={{ uri: fileUrl }}
               style={{ flex: 1, backgroundColor: "#001524" }}
@@ -93,13 +86,12 @@ const FilePreviewScreen = () => {
               accessibilityLabel="PDF preview"
             />
           ) : (
-            // 🚫 Unsupported File Type
             <View style={GlobalStyles.filePreview.unsupportedContainer}>
               <Text
                 style={GlobalStyles.text.translucent}
                 accessibilityLabel="Unsupported file type message"
               >
-                This file type is not supported for in-app preview.
+                This file type is not supported for in app preview.
               </Text>
 
               <TouchableOpacity

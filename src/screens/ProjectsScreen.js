@@ -35,14 +35,16 @@ import { useUser } from "../contexts/UserContext";
 import GlobalStyles from "../styles/styles";
 
 const ProjectsScreen = ({ navigation }) => {
+  // states for storing data from the database
   const [projects, setProjects] = useState([]);
   const [userNames, setUserNames] = useState({});
+  // states for communicating information to the user
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  // states for storing which project we are interacting with
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
-
+  // states for storing modal visibility
   const [isFormVisible, setFormVisible] = useState(false);
   const [isAddUserModalVisible, setAddUserModalVisible] = useState(false);
   const [isEditProjectModalVisible, setEditProjectModalVisible] = useState(false);
@@ -50,15 +52,18 @@ const ProjectsScreen = ({ navigation }) => {
   const { userId } = useUser();
   const { fetchProjects, deleteProject, addUserToProject } = useProjectService();
 
+  // load projects on first render
   useEffect(() => {
     loadProjects();
   }, []);
 
   const loadProjects = async () => {
     try {
+      // set loading to true
       setLoading(true);
+      // grab the project data
       const projectData = await fetchProjects(userId);
-
+      // we then want to add the tasks to the project details
       const enrichedProjects = await Promise.all(
         projectData.map(async (project) => {
           const tasks = await fetchTasksByProjectId(project.id);
@@ -66,18 +71,20 @@ const ProjectsScreen = ({ navigation }) => {
         })
       );
       setProjects(enrichedProjects);
-
+      // then grab all unique userids
       const allUserIds = enrichedProjects.flatMap((p) => p.sharedWith || []);
+      // and then grab all their first names
       const names = await fetchUserNamesByIds(allUserIds);
       setUserNames(names);
     } catch (err) {
-      console.error("Error loading projects:", err);
+      Alert.alert("Error loading projects:", err);
       setError("Failed to load projects.");
     } finally {
       setLoading(false);
     }
   };
-
+  // when the add user modal is open, we set which project
+  // we are currently interacting with
   const openAddUserModal = (projectId) => {
     setSelectedProjectId(projectId);
     setAddUserModalVisible(true);
@@ -88,19 +95,21 @@ const ProjectsScreen = ({ navigation }) => {
       Alert.alert("Error", "No project selected.");
       return;
     }
-
     try {
+      // use the helper function to add a new user the project
       await addUserToProject(selectedProjectId, email);
       Alert.alert("Success", "User added successfully!");
+      // then reload the information to pick up the change
       await loadProjects();
     } catch (error) {
       Alert.alert("Error", error.message || "Could not add user to project");
     } finally {
+      // reset the states
       setSelectedProject(null);
       setAddUserModalVisible(false);
     }
   };
-
+  // for when the user wants to delete a project
   const confirmDeleteProject = (projectId, projectName) => {
     Alert.alert(
       "Delete Project",
@@ -122,7 +131,6 @@ const ProjectsScreen = ({ navigation }) => {
   return (
     <GradientBackground>
       <TopBar title="Your Projects" />
-
       <View style={GlobalStyles.container.base}>
         {loading ? (
           <ActivityIndicator size="large" color="#FFFFFF" />
@@ -151,25 +159,21 @@ const ProjectsScreen = ({ navigation }) => {
           <Text style={GlobalStyles.text.translucent}>No projects found.</Text>
         )}
       </View>
-
       <BottomBar
         navigation={navigation}
         activeScreen="Projects"
         setFormVisible={setFormVisible}
       />
-
       <CreateProjectModal
         visible={isFormVisible}
         onClose={() => setFormVisible(false)}
         userId={userId}
       />
-
       <AddUserModal
         visible={isAddUserModalVisible}
         onClose={() => setAddUserModalVisible(false)}
         onUserAdded={handleUserAdded}
       />
-
       <EditProjectModal
         visible={isEditProjectModalVisible}
         project={selectedProject}
@@ -182,7 +186,7 @@ const ProjectsScreen = ({ navigation }) => {
   );
 };
 
-//===================== Reusable Project Item =====================//
+// reusable project item component
 const ProjectItem = ({ item, userNames, navigation, onAddUser, onEdit, onDelete }) => {
   return (
     <View style={GlobalStyles.layout.container}>
@@ -202,14 +206,11 @@ const ProjectItem = ({ item, userNames, navigation, onAddUser, onEdit, onDelete 
         </View>
       </View>
 
-      {/* 👥 Shared Users */}
       <Text style={GlobalStyles.text.translucent}>
         {item.sharedWith?.length
           ? `Shared with: ${item.sharedWith.map((id) => userNames[id] || id).join(", ")}`
           : "Not shared"}
       </Text>
-
-      {/* ✅ Preview Tasks */}
       {item.tasks.length > 0 ? (
         item.tasks.map((task, index) => (
           <View key={index} style={GlobalStyles.layout.listItem}>
@@ -222,8 +223,6 @@ const ProjectItem = ({ item, userNames, navigation, onAddUser, onEdit, onDelete 
       ) : (
         <Text style={GlobalStyles.text.translucent}>No tasks yet</Text>
       )}
-
-      {/* 🔗 View More */}
       <TouchableOpacity
         style={GlobalStyles.layout.seeMore}
         onPress={() =>

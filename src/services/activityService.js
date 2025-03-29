@@ -13,47 +13,48 @@ import {
   addDoc,
   Timestamp,
 } from "firebase/firestore";
+// we want to send a push notification each time a specific
+// activity is logged in the application
 import { sendPushNotificationToProjectUsers } from "./notificationService";
 
+// takes an array of task ids and returns the activities for those tasks
 export const fetchActivitiesForTasks = async (taskIds) => {
   try {
+    // if no tasks are passed, then return an empty array
     if (!Array.isArray(taskIds) || taskIds.length === 0) {
       return [];
     }
-
     const allActivities = [];
     const batchSize = 10;
-
-    // 🔁 Process in batches of 10 to comply with Firestore's 'in' clause limit
+    // firestore has an "in" limit 0f 10
+    // so we process in batches to make sure we are within this
     for (let i = 0; i < taskIds.length; i += batchSize) {
       const batch = taskIds.slice(i, i + batchSize);
-
       const activitiesQuery = query(
         collection(db, "activities"),
         where("taskId", "in", batch),
         orderBy("timestamp", "desc")
       );
-
       const snapshot = await getDocs(activitiesQuery);
-
       const batchActivities = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
+      // then push all the batches to the final structure
       allActivities.push(...batchActivities);
     }
 
-    // 🧹 Sort all combined results by timestamp (most recent first)
+    // sort all combined results by timestamp (most recent first)
     return allActivities.sort(
       (a, b) => b.timestamp.toMillis() - a.timestamp.toMillis()
     );
   } catch (error) {
-    console.error("❌ Error fetching activities for tasks:", error);
     throw error;
   }
 };
-
+// fetch recent activities, this takes an array of project ids and returns the
+// tasks associated with it. If max activities is passed, it will only return
+// n number of activities
 export const fetchRecentActivities = async (projectIds, maxActivities = null) => {
   try {
     // if there are no projects then there are no activities, so return an empty array
@@ -91,6 +92,7 @@ export const fetchRecentActivities = async (projectIds, maxActivities = null) =>
   }
 };
 
+// this handles adding an activity to the the database
 export const addActivity = async ({
   projectId,
   taskId,
@@ -98,13 +100,14 @@ export const addActivity = async ({
   type,
   content,
   fileUrl = null,
-  taskName = "",  // Optional: for better message content
+  taskName = "",
 }) => {
   try {
+    // check to make sure these details are present
     if (!projectId || !taskId || !userId) {
       throw new Error("Project ID, Task ID, and User ID are required.");
     }
-
+    // then add the doc to the database
     const docRef = await addDoc(collection(db, "activities"), {
       projectId,
       taskId,
@@ -115,12 +118,13 @@ export const addActivity = async ({
       timestamp: Timestamp.now(),
     });
 
-    // ✅ Only trigger push for file, image, or comment
+    // only trigger push for file, image, or comment
     const shouldNotify = ["file", "image", "message"].includes(type);
     if (shouldNotify) {
       let title = "";
       let body = "";
 
+      //display a message on the push notification to the user summarising the content
       if (type === "message") {
         title = "💬 New Comment";
         body = `${content.slice(0, 40)}${content.length > 40 ? "..." : ""}`;
@@ -129,6 +133,7 @@ export const addActivity = async ({
         body = `${content}`;
       }
 
+      // then wait on the notification being sent
       await sendPushNotificationToProjectUsers({
         projectId,
         senderId: userId,
@@ -144,7 +149,6 @@ export const addActivity = async ({
 
     return docRef.id;
   } catch (error) {
-    console.error("❌ Error adding activity:", error);
     throw error;
   }
 };

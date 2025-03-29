@@ -1,3 +1,7 @@
+//=================== SettingsScreen.js =======================//
+// very basic settings screen allows the user to change their
+// stored name, reset their passwords or logout
+//================================================================//
 import React, { useState } from "react";
 import {
   View,
@@ -26,11 +30,6 @@ import {
 import { getAuth } from "firebase/auth";
 import GlobalStyles from "../styles/styles";
 
-/**
- * @component AccountSettingsScreen
- * @description Account preferences screen with update name, reset password, and logout options.
- * Uses consistent layout with top and bottom bars and centralized GlobalStyles.
- */
 const AccountSettingsScreen = () => {
   const auth = getAuth();
   const user = auth.currentUser;
@@ -39,14 +38,15 @@ const AccountSettingsScreen = () => {
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [loading, setLoading] = useState(false);
 
-  // 🔁 Update user's display name
+  // handles updating the users display name
   const handleUpdateName = async () => {
+    //make sure a name is passed
     if (!displayName.trim()) {
       Alert.alert("Validation Error", "Display name cannot be empty.");
       return;
     }
-
     try {
+      // push the change to the database
       setLoading(true);
       await updateDisplayName(displayName.trim());
       Alert.alert("Success", "Display name updated.");
@@ -57,7 +57,8 @@ const AccountSettingsScreen = () => {
     }
   };
 
-  // 🔐 Send password reset email
+  //  uses firebases authentication methods
+  // to send a reset password link
   const handleResetPassword = async () => {
     try {
       await sendResetPasswordEmail();
@@ -67,7 +68,7 @@ const AccountSettingsScreen = () => {
     }
   };
 
-  // 🚪 Log out user and reset navigation stack
+  // handles log out user and reset navigation stack
   const handleLogout = async () => {
     try {
       await logOut();
@@ -125,7 +126,6 @@ const AccountSettingsScreen = () => {
               </Text>
             </Pressable>
 
-            {/* 🔐 Password Reset */}
             <Pressable
               style={GlobalStyles.button.secondary}
               onPress={handleResetPassword}
@@ -136,7 +136,6 @@ const AccountSettingsScreen = () => {
               </Text>
             </Pressable>
 
-            {/* 🚪 Logout */}
             <Pressable
               style={[GlobalStyles.button.small, styles.logoutRow]}
               onPress={handleLogout}

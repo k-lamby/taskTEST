@@ -26,7 +26,7 @@ import { signUp } from '../services/authService';
 import { useUser } from '../contexts/UserContext';
 
 const SignupScreen = ({ navigation }) => {
-  // ========== State ========== //
+  // states for storing the form information
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -34,30 +34,32 @@ const SignupScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState(null);
 
+  // use the user context so the information is passed around the app
   const { setUserId, setUserEmail, setFirstName: setUserFirstName } = useUser();
 
-  // ========== Event Handlers ========== //
   const handleSignUp = async () => {
+    //reset the error message
     setErrorMessage(null);
-
+    // validate the form inputs to make sure 
     if (!firstName.trim()) return setErrorMessage("First name is required.");
     if (!lastName.trim()) return setErrorMessage("Last name is required.");
     if (!email.trim() || !email.includes('@')) return setErrorMessage("Valid email is required.");
     if (password.length < 6) return setErrorMessage("Password must be at least 6 characters.");
     if (password !== confirmPassword) return setErrorMessage("Passwords do not match.");
-
     try {
+      // sign the user up using the authservice handles
       const user = await signUp(email, password, firstName, lastName);
+      // set the user info on success
       setUserId(user.uid);
       setUserEmail(user.email);
       setUserFirstName(firstName);
+      // and then push the user to the summary page
       navigation.navigate('Summary');
     } catch (error) {
       setErrorMessage(error.message || "An unexpected error occurred.");
     }
   };
 
-  // ========== UI Rendering ========== //
   return (
     <GradientBackground>
       <KeyboardAvoidingView
@@ -72,7 +74,7 @@ const SignupScreen = ({ navigation }) => {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={GlobalStyles.container.form}>
               
-              {/* === Logo Row: Image + Stacked Text === */}
+              {/* logo, with app title stacked */}
               <View style={styles.logoRow}>
                 <Image
                   source={require('../../assets/images/logo.png')}
@@ -86,7 +88,7 @@ const SignupScreen = ({ navigation }) => {
                 </View>
               </View>
 
-              {/* === Error Message === */}
+              {/* conditional section for handling error messaging */}
               {errorMessage && (
                 <Text
                   style={GlobalStyles.text.error}
@@ -96,7 +98,7 @@ const SignupScreen = ({ navigation }) => {
                 </Text>
               )}
 
-              {/* === Input Fields === */}
+              {/* form for adding the account details */}
               <TextInput
                 style={GlobalStyles.input.field}
                 placeholder="First Name"
@@ -144,7 +146,6 @@ const SignupScreen = ({ navigation }) => {
                 accessibilityLabel="Re-enter your password"
               />
 
-              {/* === Sign Up Button === */}
               <TouchableOpacity
                 style={GlobalStyles.button.primary}
                 onPress={handleSignUp}
@@ -153,7 +154,6 @@ const SignupScreen = ({ navigation }) => {
                 <Text style={GlobalStyles.button.text}>Sign Up</Text>
               </TouchableOpacity>
 
-              {/* === Back to Login === */}
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 accessibilityLabel="Go back to login screen"
@@ -168,7 +168,7 @@ const SignupScreen = ({ navigation }) => {
   );
 };
 
-// ==== Local Styles for Layout ====
+// ==== Page Specific Styles ====//
 const styles = StyleSheet.create({
   logoRow: {
     flexDirection: 'row',

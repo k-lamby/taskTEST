@@ -1,8 +1,7 @@
-//=======================================================//
-// TasksScreen.js
-// Displays all tasks assigned to the current user
-// Includes traffic-light importance bar next to task name
-//=======================================================//
+// ========================TasksScreen.js=========================//
+// Displays all tasks assigned to the current user.
+// Includes "traffic light" priority indicators and activity history.
+// ==============================================================//
 
 import React, { useEffect, useState } from "react";
 import {
@@ -13,12 +12,7 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
-import {
-  CheckCircle,
-  Circle,
-  Hourglass,
-  Edit,
-} from "lucide-react-native";
+import { CheckCircle, Circle, Hourglass, Edit } from "lucide-react-native";
 
 import GradientBackground from "../components/GradientBackground";
 import TopBar from "../components/TopBar";
@@ -26,10 +20,7 @@ import BottomBar from "../components/BottomBar";
 import TaskDetailModal from "../components/modals/TaskDetailModal";
 import ActivityInfoModal from "../components/modals/ActivityInfoModal";
 
-import {
-  fetchTasksForUser,
-  toggleTaskCompletion,
-} from "../services/taskService";
+import { fetchTasksForUser, toggleTaskCompletion } from "../services/taskService";
 import { fetchProjectById } from "../services/projectService";
 import { fetchActivitiesForTasks } from "../services/activityService";
 import { fetchUserNamesByIds } from "../services/authService";
@@ -38,84 +29,90 @@ import { getActivityIcon } from "../utils/iconUtils";
 import { useUser } from "../contexts/UserContext";
 import GlobalStyles from "../styles/styles";
 
-// 🔴🟡🟢 Traffic Light Color Mapping
+// returns the color for the task priority
 const getImportanceColor = (importance) => {
   switch (importance) {
     case "high":
-      return "#FF4C4C"; // 🔴 Urgent
+      return "#FF4C4C";
     case "medium":
-      return "#FFC107"; // 🟡 Normal
+      return "#FFC107";
     case "low":
-      return "#4CAF50"; // 🟢 Low priority
+      return "#4CAF50";
     default:
-      return "#999999"; // ⚪ Unknown
+      return "#999999";
   }
 };
 
 const TasksScreen = ({ navigation }) => {
+  // states for storing information from the database
   const [usersTasks, setUsersTasks] = useState([]);
   const [taskActivities, setTaskActivities] = useState({});
   const [projectNames, setProjectNames] = useState({});
   const [userNames, setUserNames] = useState({});
+  // states for storing the details of the task we are interacting with
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedProjectUsers, setSelectedProjectUsers] = useState([]);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  // states for controlling the visibility of the modals
   const [modalVisible, setModalVisible] = useState(false);
   const [activityModalVisible, setActivityModalVisible] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState(null);
 
   const { userId } = useUser();
 
+  //load tasks when initial landing on the page
   useEffect(() => {
-    loadUserTasks();
+    if (userId) loadUserTasks();
   }, [userId]);
 
   const loadUserTasks = async () => {
     try {
+      // get the tasks for the user
       const tasks = await fetchTasksForUser(userId);
       setUsersTasks(tasks);
 
+      // then grab all the unique projectids for the tasks
+      // we want to be able to display the project name associated with the task
       const uniqueProjectIds = [...new Set(tasks.map((t) => t.projectId))];
-      const nameMap = {};
-
+      const projectNameMap = {};
       for (const pid of uniqueProjectIds) {
         if (pid) {
           const project = await fetchProjectById(pid);
-          nameMap[pid] = project.name || "Unnamed Project";
+          projectNameMap[pid] = project.name || "Unnamed Project";
         }
       }
+      setProjectNames(projectNameMap);
 
-      setProjectNames(nameMap);
-
+      // then get unique task ids, and get all the activities associated with those tasks
       const taskIds = tasks.map((t) => t.id);
       const activities = await fetchActivitiesForTasks(taskIds);
 
-      const grouped = {};
+      // we then group each activity by task
+      const groupedActivities = {};
       activities.forEach((activity) => {
         const tid = activity.taskId;
-        if (!grouped[tid]) grouped[tid] = [];
-        grouped[tid].push(activity);
+        if (!groupedActivities[tid]) groupedActivities[tid] = [];
+        groupedActivities[tid].push(activity);
       });
-
-      setTaskActivities(grouped);
+      setTaskActivities(groupedActivities);
     } catch (error) {
       Alert.alert("Error", "Could not load tasks.");
-      console.error("Task load error:", error);
     }
   };
 
   useEffect(() => {
+    // we then want to grab all the usernames for the tasks
+    // so we can display them alongside the activity
     const loadUserNames = async () => {
       const allActivities = Object.values(taskActivities).flat();
-      const uniqueUserIds = [
-        ...new Set(allActivities.map((a) => a.userId).filter(Boolean)),
-      ];
+      const uniqueUserIds = [...new Set(allActivities.map((a) => a.userId).filter(Boolean))];
+
       if (uniqueUserIds.length === 0) return;
 
       try {
         const namesMap = await fetchUserNamesByIds(uniqueUserIds);
         setUserNames(namesMap);
       } catch (error) {
-        console.error("❌ Failed to fetch user names:", error);
+        Alert.alert("Failed to fetch user names:", error);
       }
     };
 
@@ -124,27 +121,23 @@ const TasksScreen = ({ navigation }) => {
     }
   }, [taskActivities]);
 
+  // for handling the toggling of a task status between complete and pending
   const handleToggleTask = async (taskId, currentStatus) => {
     try {
       await toggleTaskCompletion(taskId, currentStatus, userId);
-
       setUsersTasks((prev) =>
         prev.map((task) =>
           task.id === taskId
-            ? {
-                ...task,
-                status:
-                  currentStatus === "completed" ? "pending" : "completed",
-              }
+            ? { ...task, status: currentStatus === "completed" ? "pending" : "completed" }
             : task
         )
       );
     } catch (error) {
       Alert.alert("Error", "Failed to update task status.");
-      console.error("Toggle error:", error);
     }
   };
 
+  // helper function for opening the task modal.
   const handleOpenTaskModal = async (task) => {
     try {
       const project = await fetchProjectById(task.projectId);
@@ -155,16 +148,18 @@ const TasksScreen = ({ navigation }) => {
       setModalVisible(true);
     } catch (error) {
       Alert.alert("Error", "Unable to load project data.");
-      console.error("Failed to open TaskDetailModal:", error);
     }
   };
 
+  // when the task modal is closed we want to clear the states
   const handleCloseTaskModal = () => {
     setSelectedTask(null);
     setSelectedProjectUsers([]);
     setModalVisible(false);
   };
 
+  // when an activity is pressed the action is different depending on 
+  // the type of activity the user is interacting with
   const handleActivityPress = (activity) => {
     if (activity.activityType === "image" || activity.activityType === "file") {
       navigation.navigate("FilePreviewer", {
@@ -178,21 +173,21 @@ const TasksScreen = ({ navigation }) => {
     }
   };
 
+  // component for handling the render of a single task
   const renderTask = ({ item }) => {
+    // variables for handling what is displayed to the user
     const isCompleted = item.status === "completed";
     const StatusIcon = isCompleted ? CheckCircle : Hourglass;
     const projectName = projectNames[item.projectId] || "Unknown Project";
     const activities = taskActivities[item.id] || [];
-
     const importanceColor = getImportanceColor(item.priority);
 
     return (
       <View style={GlobalStyles.layout.container}>
-        {/* Header Row with Importance Bar */}
         <View style={styles.taskHeader}>
           <View
             style={[styles.importanceBar, { backgroundColor: importanceColor }]}
-            accessibilityLabel={`Importance ${item.importance || "unknown"}`}
+            accessibilityLabel={`Task importance: ${item.importance || "unknown"}`}
           />
           <View style={{ flex: 1 }}>
             <Text
@@ -200,6 +195,8 @@ const TasksScreen = ({ navigation }) => {
                 GlobalStyles.layout.title,
                 isCompleted && styles.completedText,
               ]}
+              accessibilityRole="header"
+              accessibilityLabel={`Task name: ${item.name}`}
             >
               {item.name}
             </Text>
@@ -215,21 +212,11 @@ const TasksScreen = ({ navigation }) => {
               }
               style={styles.iconTouch}
             >
-{isCompleted ? (
-  <CheckCircle
-    size={20}
-    color="#4CAF50"
-    strokeWidth={2}
-    accessibilityLabel="Task is completed"
-  />
-) : (
-  <Circle
-    size={20}
-    color="#888"
-    strokeWidth={2}
-    accessibilityLabel="Task is pending"
-  />
-)}
+              {isCompleted ? (
+                <CheckCircle size={20} color="#4CAF50" strokeWidth={2} />
+              ) : (
+                <Circle size={20} color="#888" strokeWidth={2} />
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -242,29 +229,21 @@ const TasksScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <Text style={GlobalStyles.text.translucentSmall}>
-          Project: {projectName}
-        </Text>
-
+        <Text style={GlobalStyles.text.translucentSmall}>Project: {projectName}</Text>
         <Text style={[GlobalStyles.text.translucentSmall, { marginTop: 4 }]}>
           {item.description || "No description available."}
         </Text>
 
         <View style={styles.metaRow}>
           <Text style={GlobalStyles.text.translucentSmall}>
-            Due:{" "}
-            {item.dueDate
-              ? new Date(item.dueDate).toLocaleDateString()
-              : "No due date"}
+            Due: {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : "No due date"}
           </Text>
 
           <View style={styles.statusWrapper}>
             <StatusIcon
               color={isCompleted ? "#4CAF50" : "#FFA500"}
               size={18}
-              accessibilityLabel={`Status: ${
-                isCompleted ? "Completed" : "Pending"
-              }`}
+              accessibilityLabel={`Status: ${isCompleted ? "Completed" : "Pending"}`}
             />
             <Text
               style={[
@@ -338,9 +317,7 @@ const TasksScreen = ({ navigation }) => {
           projectUsers={selectedProjectUsers}
           onUpdateTask={({ id, updates }) => {
             setUsersTasks((prev) =>
-              prev.map((task) =>
-                task.id === id ? { ...task, ...updates } : task
-              )
+              prev.map((task) => (task.id === id ? { ...task, ...updates } : task))
             );
           }}
         />
@@ -360,6 +337,7 @@ const TasksScreen = ({ navigation }) => {
   );
 };
 
+//===== Page Specific Styles ====//
 const styles = StyleSheet.create({
   iconTouch: {
     padding: 6,
@@ -369,7 +347,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingBottom: 5
+    paddingBottom: 5,
   },
   importanceBar: {
     width: 6,

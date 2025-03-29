@@ -13,14 +13,12 @@ import {
   doc,
   getDoc,
   updateDoc,
-  deleteDoc,
   addDoc,
   arrayUnion,
   serverTimestamp,
 } from "firebase/firestore";
 import { useUser } from "../contexts/UserContext";
 
-//CREATE NEW PROJECT
 //Creates a new project passing it the project data
 //entered by the user form
 export const createProject = async (projectData) => {
@@ -38,7 +36,6 @@ export const createProject = async (projectData) => {
   }
 };
 
-//FETCH PROJECTS
 //Fetches all projects that the user has created or 
 //had shared with
 export const fetchProjects = async (userId, userEmail=null) => {
@@ -83,7 +80,6 @@ export const fetchProjects = async (userId, userEmail=null) => {
   }
 };
 
-// FETCH PROJECT USER IDS
 // Gets all the users associated with a project id
 export const fetchProjectUserIds = async (projectId) => {
   try {
@@ -107,7 +103,6 @@ export const fetchProjectUserIds = async (projectId) => {
   }
 };
 
-// UPDATE PROJECT
 // this updates the project title and description
 export const updateProject = async (projectId, data) => {
   try {
@@ -122,7 +117,6 @@ export const updateProject = async (projectId, data) => {
   }
 };
 
-// DELETE PROJECT
 // This does a soft delete, so the data can be recovered
 // after a set period of time we use firebase functions to permanently
 // delete the data
@@ -142,7 +136,7 @@ export const deleteProject = async (projectId) => {
   }
 };
 
-// ADD USER TO THE PROJECT
+
 // adds additional user into the shared with section
 export const addUserToProject = async (projectId, userEmail) => {
   try {
@@ -176,17 +170,13 @@ export const addUserToProject = async (projectId, userEmail) => {
   }
 };
 
+// grabs a project for a specific id handed to it
 export const fetchProjectById = async (projectId) => {
   try {
     const projectRef = doc(db, "projects", projectId);
     const snapshot = await getDoc(projectRef);
-
-    if (!snapshot.exists()) {
-      throw new Error("Project not found.");
-    }
-
     const data = snapshot.data();
-
+    // return project object
     return {
       id: snapshot.id,
       name: data.name || "Untitled",

@@ -1,5 +1,5 @@
 //================== taskService.js ===========================//
-// This handles CRUD operations related to tasks in firebstore
+// this handles task related actions in the application
 //============================================================//
 
 import { db } from "../config/firebaseConfig";
@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { addActivity } from "./activityService";
 
-
+// handles adding a task, sets a few default options
 export const addTask = async (taskData) => {
   try {
     const {
@@ -31,15 +31,15 @@ export const addTask = async (taskData) => {
       priority = "medium"
     } = taskData;
 
-    // ✅ Validate required fields
+    // make sure we have the basic information
     if (!name || !projectId || !owner) {
       throw new Error("Missing required task fields: name, projectId, or owner.");
     }
 
-    // ✅ Determine completedAt based on status
+    // set the completed date as null
     const completedAt = status === "completed" ? new Date() : null;
 
-    // ✅ Build Firestore document payload
+    // build the structure for upload to the database
     const newTask = {
       name,
       description,
@@ -47,16 +47,16 @@ export const addTask = async (taskData) => {
       owner,
       status,
       priority,
-      createdAt: serverTimestamp(), // Firestore will populate this
+      createdAt: serverTimestamp(),
       dueDate: dueDate ? dueDate : null,
       completedAt,
     };
 
-    // ✅ Add to Firestore
+    // then upload the new task to firestore
     const tasksRef = collection(db, "tasks");
     const docRef = await addDoc(tasksRef, newTask);
 
-    // ✅ Log activity (optional, but encouraged)
+    // and log the new activity
     await addActivity({
       projectId,
       taskId: docRef.id,
@@ -70,14 +70,12 @@ export const addTask = async (taskData) => {
 
     return docRef.id;
   } catch (error) {
-    console.error("❌ Error adding new task:", error);
+    console.error("Error adding new task:", error);
     throw error;
   }
 };
 
-//===========================================================//
-// gets all the tasks associated with a particular project id
-//===========================================================//
+// get all the tasks for a particular project
 export const fetchTasksByProjectId = async (projectId) => {
   try {
     // construct the query for getting the data from the database
@@ -113,8 +111,8 @@ export const fetchTasksByProjectId = async (projectId) => {
 
       // build the task object
       const taskObject = {
-        id: doc.id, // grab the task id
-        ...data,    // get the task data, keep the object the same
+        id: doc.id, 
+        ...data,
         dueDate,
         createdAt, 
       };
@@ -131,29 +129,27 @@ export const fetchTasksByProjectId = async (projectId) => {
   }
 };
 
-//===========================================================//
-// used on the summary page, fetches 3 tasks owner by a particular
-// user
-//===========================================================//
+// fetch all the tasks for a particular user, allows max task limitation
+// but not required
 export const fetchTasksForUser = async (userId, maxTasks = null) => {
   try {
     const tasksRef = collection(db, "tasks");
 
-    // Base query: owned by user, ordered by dueDate
+    // build the base query
     let baseQuery = query(
       tasksRef,
       where("owner", "==", userId),
       orderBy("dueDate", "asc")
     );
 
-    // Conditionally apply a limit if provided
+    // conditionally apply the limit if it is present
     if (typeof maxTasks === "number" && maxTasks > 0) {
       baseQuery = query(baseQuery, limit(maxTasks));
     }
-
+    // get the documents
     const snapshot = await getDocs(baseQuery);
 
-    // Map results
+    // map the results to a decent structure
     const tasks = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -161,13 +157,11 @@ export const fetchTasksForUser = async (userId, maxTasks = null) => {
       createdAt: doc.data().createdAt?.toDate?.() || null,
     }));
 
-    // Sort pending tasks first, then by due date
+    // move pending tasks to the top, and then sort by date
     const sorted = tasks.sort((a, b) => {
       // Bring pending tasks to top
       const statusOrder = (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1);
       if (statusOrder !== 0) return statusOrder;
-
-      // If same status, sort by due date
       const aDue = a.dueDate?.getTime() || 0;
       const bDue = b.dueDate?.getTime() || 0;
       return aDue - bDue;
@@ -175,14 +169,12 @@ export const fetchTasksForUser = async (userId, maxTasks = null) => {
 
     return sorted;
   } catch (error) {
-    console.error("❌ Error fetching assigned tasks:", error);
+    console.error("Error fetching assigned tasks:", error);
     return [];
   }
 };
 
-//===========================================================//
-// toggles the task status between pending and complete
-//===========================================================//
+// handles the task completion status
 export const toggleTaskCompletion = async (taskId, currentStatus, userId) => {
   try {
     // get the id reference to the Firestore task document

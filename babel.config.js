@@ -1,3 +1,6 @@
+// ================== babel.config.js =========================== //
+// handles passing of the environment variables
+// =================================================================
 module.exports = function (api) {
     api.cache(true);
     return {

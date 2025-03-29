@@ -1,8 +1,6 @@
-//=======================================================//
-// SummaryScreen.js
-// This is the landing screen after login.
-// Displays featured projects, assigned tasks, and activity.
-// Dynamically fetches project users for task assignment logic.
+//====================SummaryScreen.js======================//
+// intial landing screen after logging in, displays basic 
+// project info, task info, activity info.
 //=======================================================//
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -34,6 +32,7 @@ import { useUser } from "../contexts/UserContext";
 import GlobalStyles from "../styles/styles";
 
 const SummaryScreen = ({ navigation }) => {
+  // used for storing data pulled from the database
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -42,24 +41,23 @@ const SummaryScreen = ({ navigation }) => {
   const { userId, firstName } = useUser();
   const { fetchProjects } = useProjectService();
 
-  //======================================================
-  // Load featured projects, assigned tasks, and activities
-  // Also fetch project users for task modal functionality
-  //======================================================
+  // fetch data outside of the use effect so we can call this
+  // whenever we update information and need to refresh the view
   const fetchData = useCallback(async () => {
     try {
-      // 1️⃣ Fetch top 3 projects
+      // fetch random 3 projects
       const projectData = await fetchProjects();
       const topProjects = projectData.slice(0, 3);
       setProjects(topProjects);
 
-      // 2️⃣ Fetch top 3 tasks assigned to current user
+      // fetch random 3 projects for the user
       const assignedTasks = await fetchTasksForUser(userId, 3);
       setTasks(assignedTasks);
 
-      // 3️⃣ Fetch recent activity (limit 3)
+      // fetch 3 most recent activities for the projects
       const projectIds = projectData.map((p) => p.id);
       const recentActivities = await fetchRecentActivities(projectIds, 3);
+      // add contextual information to the activity like project
       const enrichedActivities = recentActivities.map((activity) => {
         const project = projectData.find(p => p.id === activity.projectId);
         const title = project ? project.name : "Unnamed Project";
@@ -71,7 +69,8 @@ const SummaryScreen = ({ navigation }) => {
       });
       setActivities(enrichedActivities);
 
-      // 4️⃣ Fetch project users for each referenced project
+      // we then need to get users for each project so we can
+      // display the activity with the user who performed it
       const usersByProject = {};
 
       for (const project of topProjects) {
@@ -84,11 +83,9 @@ const SummaryScreen = ({ navigation }) => {
           })
         );
       }
-
       setProjectUsersMap(usersByProject);
     } catch (err) {
       Alert.alert("Error fetching data", err.message);
-      console.error("❌ SummaryScreen fetch error:", err);
     }
   }, [fetchProjects, userId]);
 
@@ -96,14 +93,12 @@ const SummaryScreen = ({ navigation }) => {
     fetchData();
   }, [fetchData]);
 
-  //======================================================
-  // Toggle completion status of a task assigned to user
-  //======================================================
+  // allows the user to toggle the status of a task
   const handleToggleTaskStatus = async (taskId, currentStatus) => {
     try {
       await toggleTaskCompletion(taskId, currentStatus, userId);
 
-      // Update local state for immediate UI feedback
+      // update the local UI state to display the change immediately
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === taskId
@@ -120,9 +115,7 @@ const SummaryScreen = ({ navigation }) => {
     }
   };
 
-  //======================================================
-  // Render Featured Projects List
-  //======================================================
+  // section for rendering projects
   const renderProjects = () => (
     <View style={GlobalStyles.layout.container}>
       <View style = {GlobalStyles.layout.header}>
@@ -167,15 +160,13 @@ const SummaryScreen = ({ navigation }) => {
     </View>
   );
 
+  // return all the different components
   return (
     <GradientBackground>
       <TopBar title={`Welcome, ${firstName || "User"}!`} />
 
       <View style={GlobalStyles.container.base}>
-        {/* ✅ Featured Projects */}
         {renderProjects()}
-
-        {/* ✅ Featured Tasks with dynamic project users */}
         <TaskList
           tasks={tasks}
           navigation={navigation}
@@ -184,17 +175,13 @@ const SummaryScreen = ({ navigation }) => {
           showSeeMore={true}
           projectUsersMap={projectUsersMap}
         />
-
-        {/* ✅ Recent Activity */}
         <ActivityList activities={activities} navigation={navigation} />
       </View>
-
-      {/* ✅ Bottom Navigation Bar */}
       <BottomBar
         navigation={navigation}
         activeScreen="Summary"
         userId={userId}
-        onProjectCreated={fetchData} // Refreshes project list on new project creation
+        onProjectCreated={fetchData}
       />
     </GradientBackground>
   );
